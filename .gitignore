@@ -1,0 +1,7 @@
+data/wiki/
+data/raw/
+data/audit.jsonl
+data/graph.json
+web/node_modules/
+web/dist/
+.DS_Store

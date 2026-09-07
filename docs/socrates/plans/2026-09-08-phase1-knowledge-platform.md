@@ -6,7 +6,7 @@
 
 **Architecture:** wiki 文件是知识主存；Graphiti 只通过 HTTP 做时序投影；RAGFlow 只解析/引用。查询记访问；定时按类型衰减置信度（只降权不删）。多 Agent 写同一 wiki：页锁 + LWW，冲突进人工队列，private 可晋升 shared。
 
-**Tech Stack:** Go 1.23、net/http、Graphiti REST（`POST /messages`、`POST /search`）、Neo4j 5.26、RAGFlow HTTP、Vite + React + `react-force-graph-2d`
+**Tech Stack:** Go 1.22、net/http、Graphiti REST（`POST /messages`、`POST /search`）、Neo4j 5.26、RAGFlow HTTP、Vite + React + `react-force-graph-2d`
 
 **Spec:** `docs/socrates/specs/2026-09-08-enterprise-knowledge-platform-design.md`
 

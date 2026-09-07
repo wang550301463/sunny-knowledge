@@ -1,0 +1,6 @@
+{
+  "id": "INC-1",
+  "title": "redis 升级到 7",
+  "body": "pay-api 不再使用 redis-6，改为 redis-7。此变更 supersedes 旧依赖。",
+  "at": "2026-09-01T00:00:00Z"
+}

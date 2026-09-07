@@ -1,0 +1,19 @@
+{
+  "name": "sunny-knowledge-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test src/graphMap.test.js",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-force-graph-2d": "^1.27.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  }
+}
