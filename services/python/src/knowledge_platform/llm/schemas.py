@@ -18,6 +18,7 @@ class LLMSettings(Settings):
     credential_encryption_key: SecretStr = SecretStr('')
     llm_max_request_bytes: int = Field(2_000_000, ge=1024, le=10_000_000)
     llm_allow_http_providers: bool = False
+    llm_metadata_timeout_seconds: float = Field(default=5.0, ge=0.1, le=60)
 
 
 class LLMError(Exception):

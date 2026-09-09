@@ -107,3 +107,16 @@ async def initialize(engine):
             await connection.execute(text(f'DROP TRIGGER IF EXISTS immutable_record ON {table}'))
             await connection.execute(text(f'''CREATE TRIGGER immutable_record BEFORE UPDATE OR DELETE
                 ON {table} FOR EACH ROW EXECUTE FUNCTION ingest_reject_immutable_mutation()'''))
+
+class Registration(Base):
+    """Immutable (source_id, version, path) registration of a file snapshot.
+
+    Reconstructed 2026-09-09 from pipeline.py usage: session.get(Registration,
+    (source.id, task.source_version, file['path'])) and add(Registration(
+    source_id=..., version=..., path=..., snapshot=...))."""
+    __tablename__ = 'ingest_registrations'
+    source_id: Mapped[str] = mapped_column(ForeignKey('ingest_sources.id'), primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    path: Mapped[str] = mapped_column(String(2048), primary_key=True)
+    snapshot: Mapped[str] = mapped_column(String(512))
+    registered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, server_default=text('now()'))
