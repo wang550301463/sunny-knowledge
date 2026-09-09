@@ -30,8 +30,8 @@ function GraphNotices({ data }: { data: GraphResult }) {
     <Typography.Paragraph type="secondary">结果以知识修订和来源时间为准。没有部署证据，不能据此推断生产版本。{reasons.length > 0 && "当前图不完整，不能据此判断不存在依赖。"}</Typography.Paragraph>
   </div>;
 }
-export function GraphExplorer({ spaceId }: { spaceId: string }) { return <Explorer key={spaceId} spaceId={spaceId}/>; }
-function Explorer({ spaceId }: { spaceId: string }) {
+export function GraphExplorer({ spaceId, available }: { spaceId: string; available?: boolean }) { return <Explorer key={spaceId} spaceId={spaceId} available={available}/>; }
+function Explorer({ spaceId, available: _available }: { spaceId: string; available?: boolean }) {
   const { api } = useAuth(), resource = useGraphExplorer(api);
   const [query, setQuery] = useState(""), [business, setBusiness] = useState(""), [known, setKnown] = useState("");
   const [relation, setRelation] = useState<GraphParameters["relation"]>({ types: ["depends_on", "uses"], direction: "outgoing", hops: 1 });

@@ -13,6 +13,9 @@ export function errorMessage(error:unknown):string {
   }
   return '操作未完成，请重试。';
 }
+export function isAuthorizationFailure(error:unknown):boolean {
+  return error instanceof ApiError && (error.status===401 || error.status===403 || error.code==='authorization_changed' || error.code==='unauthenticated');
+}
 export const pathId=(value:string)=>encodeURIComponent(value);
 export function query(values:Record<string,string|number|undefined|null>) { const params=new URLSearchParams(); Object.entries(values).forEach(([key,value])=>{if(value!==undefined&&value!==null&&value!=='')params.set(key,String(value));}); return params.size ? `?${params}` : ''; }
 export class ApiClient {

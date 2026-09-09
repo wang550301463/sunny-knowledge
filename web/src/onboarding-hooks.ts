@@ -25,7 +25,7 @@ export function useOnboarding(api: ApiClient, selection: OnboardingSelection) {
   const key = JSON.stringify(selection), chosen = useRef(selection);
   chosen.current = selection;
   const serial = useRef(0), live = useRef(false), active = useRef(false);
-  const pending = useRef<Promise<void>>(), controller = useRef<AbortController>();
+  const pending = useRef<Promise<void>|undefined>(undefined), controller = useRef<AbortController|undefined>(undefined);
   const [state, setState] = useState<{ key: string; data?: OnboardingSnapshot; loading: boolean; suspended: boolean; error?: unknown }>({ key, loading: true, suspended: false });
   const read = useCallback((clear = false): Promise<void> => {
     if (!live.current || !active.current) return Promise.resolve();

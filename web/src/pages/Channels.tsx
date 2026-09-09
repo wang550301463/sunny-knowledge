@@ -54,7 +54,7 @@ export function ChannelEditor({config,agentHint,onClose,onSaved}:{config?:Channe
   <Form.Item name="bot_id" label="BotID" rules={[{required:true,message:"请输入企微 BotID"},{pattern:channelKeyPattern,message:"BotID 格式不正确"}]}><Input disabled={!!config} autoComplete="off"/></Form.Item>
   <Form.Item name="bot_secret" label={config?"替换 BotSecret（留空保留）":"BotSecret"} rules={[{required:!config,message:"请输入 BotSecret"},{validator:(_,v)=>!v||new TextEncoder().encode(v).length<=4096?Promise.resolve():Promise.reject(new Error("BotSecret 过长"))}]}><Input.Password autoComplete="new-password" visibilityToggle={false}/></Form.Item>
   <Form.Item name="space_ids" label="渠道知识范围" rules={[{required:true,type:"array",min:1,max:100,message:"请选择 1–100 个当前可读空间"}]} extra="机器人范围取用户、智能体、渠道和本轮授权的交集；群聊还受独立群受众约束。"><Select mode="multiple" loading={spaces.loading||published.loading} disabled={!published.data} options={allowed.map(s=>({label:s.name,value:s.id}))}/></Form.Item>
-  {spaces.next&&<Button onClick={()=>void spaces.more()}>加载更多空间</Button>}<ErrorNotice error={spaces.error}/><ErrorNotice error={error}/>{error&&<Typography.Paragraph>密钥输入已清除。若提交结果不确定，请关闭并刷新渠道列表核对，再决定是否重新提交。</Typography.Paragraph>}
+  {spaces.next&&<Button onClick={()=>void spaces.more()}>加载更多空间</Button>}<ErrorNotice error={spaces.error}/><ErrorNotice error={error}/>{error!=null&&String(error)&&<Typography.Paragraph>密钥输入已清除。若提交结果不确定，请关闭并刷新渠道列表核对，再决定是否重新提交。</Typography.Paragraph>}
   <div className="form-footer"><Button onClick={()=>{form.setFieldValue("bot_secret","");onClose();}}>取消</Button><Button type="primary" htmlType="submit" loading={busy} disabled={!published.data||!!spaces.error}>{config?.enabled?"保存并停用":"保存停用配置"}</Button></div>
  </Form></Modal>;
 }

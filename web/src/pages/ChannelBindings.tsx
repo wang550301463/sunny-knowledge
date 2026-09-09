@@ -22,7 +22,7 @@ export function ChannelBindingPage(){
    <Button onClick={()=>setCommand(undefined)}>隐藏确认命令</Button>
   </>:!error?<Alert type="info" message="登录后，请回到企微重新打开同一条未过期的绑定链接。也可以在机器人私聊发送 /绑定 获取新链接。"/>:null}
   {error instanceof ApiError&&[400,403].includes(error.status)?<Alert type="error" message="绑定链接已失效、已使用或无法验证。请回企微私聊发送 /绑定 获取新链接。"/>:<ErrorNotice error={error}/>}
-  {error&&<Typography.Paragraph>本次一次性凭据已清除。请求结果不确定时，请从企微重新发起绑定。</Typography.Paragraph>}
+  {error!=null&&<Typography.Paragraph>{String(error)}</Typography.Paragraph>}{false&&<Typography.Paragraph>本次一次性凭据已清除。请求结果不确定时，请从企微重新发起绑定。</Typography.Paragraph>}
   <Link to="/channels/bindings">查看我的实际绑定状态</Link>
  </div></>;
 }

@@ -6,10 +6,10 @@ import { useAuth } from "../auth";
 import { pathId, query } from "../api";
 import { modeLabels, readableRun, toolLabels } from "../agent-api";
 import { useAgentList } from "../agent-hooks";
+import { ErrorNotice, PageHeader, ResourceView } from "../components/Common";
 import { useResource } from "../hooks";
-import type { AgentCreate, AgentDefinition, AgentMode, AgentModel, AgentPreset, AgentRun, AgentSession, AgentTool } from "../agent-types";
+import type { AgentCreate, AgentDefinition, AgentModel, AgentPreset, AgentRun, AgentSession, AgentTool } from "../agent-types";
 import type { Space as KnowledgeSpace } from "../types";
-import { ErrorNotice, PageHeader, ResourceView, StatusTag } from "../components/Common";
 import { RunPanel } from "../components/AgentRun";
 
 const budgets={model_rounds:8,tool_calls:20,parallel_reads:2,seconds:180};
@@ -90,7 +90,7 @@ function AgentWorkspace({id,models,spaces,modelsMore,spacesMore,onClose,onChange
 }
 
 function AgentTest({agent,onClose}:{agent:AgentDefinition;onClose:()=>void}) {
- const {api}=useAuth();const [question,setQuestion]=useState(""),[run,setRun]=useState<AgentRun>(),[busy,setBusy]=useState(false),[error,setError]=useState<unknown>();const session=useRef<string>(),attempt=useRef<{question:string;id:string}>();
+ const {api}=useAuth();const [question,setQuestion]=useState(""),[run,setRun]=useState<AgentRun>(),[busy,setBusy]=useState(false),[error,setError]=useState<unknown>();const session=useRef<string|undefined>(undefined),attempt=useRef<{question:string;id:string}|undefined>(undefined);
  const live=useRef(true);useEffect(()=>()=>{live.current=false},[]);
  const submit=async()=>{setBusy(true);setError(undefined);try{if(!session.current)session.current=(await api.post<AgentSession>("/sessions",{title:`测试 · ${agent.name}`.slice(0,160)})).id;if(!live.current)return;if(attempt.current?.question!==question)attempt.current={question,id:crypto.randomUUID()};const result=readableRun(await api.post<AgentRun>("/runs",{agent_id:agent.id,configuration_id:agent.configuration_id,session_id:session.current,question:question.trim(),space_ids:agent.config.space_ids,idempotency_key:attempt.current.id}));if(live.current){setRun(result);attempt.current=undefined}}catch(err){if(live.current)setError(err)}finally{if(live.current)setBusy(false)}};
  return <Drawer title={`测试 ${agent.name} · v${agent.version}`} open onClose={onClose} width={800} destroyOnHidden><Alert type="info" showIcon message="使用固定配置版本进行真实运行" description="测试会使用实际模型和知识权限，运行记录保存在你的会话中。关闭面板不会停止运行。"/><Input.TextArea aria-label="测试问题" value={question} onChange={e=>setQuestion(e.target.value)} rows={3} maxLength={8192}/><Button loading={busy} disabled={!question.trim()} onClick={()=>void submit()}>开始测试</Button><ErrorNotice error={error}/>{run&&<><Link to={`/chat${query({session:run.session_id,run:run.id,agent:agent.id,configuration:agent.configuration_id})}`}>在问答页继续查看</Link><RunPanel key={run.id} runId={run.id} onRunChanged={setRun}/></>}</Drawer>;

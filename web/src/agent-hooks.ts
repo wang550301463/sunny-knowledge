@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./auth";
 import { pathId } from "./api";
-import { applyRunEvent, readableRun, terminal } from "./agent-api";
+import { agentList, applyRunEvent, readableRun, terminal } from "./agent-api";
 import { resumeRun } from "./events";
 import type { AgentRun, RunProgress } from "./agent-types";
 
@@ -53,4 +53,30 @@ export function useAgentRun(runId:string) {
  const refresh=useCallback(()=>loadRef.current(),[]);
  const invalidate=useCallback((error:unknown)=>invalidateRef.current(error),[]);
  return {...(state.key===runId?state:{key:runId,loading:true,progress:{cursor:0,stages:[]},transport:"connecting" as const}),refresh,invalidate};
+}
+
+/** Reconstructed 2026-09-09: list hook over agentList with cursor paging. */
+export function useAgentList<T>(path:string,_resume?:boolean) {
+  const {api}=useAuth();
+  const [items,setItems]=useState<T[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState<unknown>();
+  const [cursor,setCursor]=useState<string|undefined>();
+  const [hasMore,setHasMore]=useState(false);
+  const load=useCallback(async(signal?:AbortSignal)=>{
+    const result=await agentList<T>(api,path,signal,cursor);
+    setItems(prev=>cursor?[...prev,...result.items]:result.items);
+    setHasMore(result.next_cursor!=null);
+    if(result.next_cursor)setCursor(result.next_cursor);
+    setError(undefined);
+  },[api,path,cursor]);
+  const refresh=useCallback(()=>{setCursor(undefined);setLoading(true);return load().catch(e=>setError(e)).finally(()=>setLoading(false))},[load]);
+  const more=useCallback(()=>{if(!hasMore)return Promise.resolve();setLoading(true);return load().catch(e=>setError(e)).finally(()=>setLoading(false))},[load,hasMore]);
+  useEffect(()=>{
+    const controller=new AbortController();let live=true;
+    load(controller.signal).catch(e=>{if(live)setError(e)}).finally(()=>{if(live)setLoading(false)});
+    return()=>{live=false;controller.abort()};
+  },[load]);
+  const clear=useCallback(()=>{setItems([]);setCursor(undefined);setHasMore(false)},[]);
+  return {items,loading,error,refresh,next:hasMore,more,clear};
 }

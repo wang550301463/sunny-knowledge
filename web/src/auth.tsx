@@ -46,7 +46,7 @@ export function AuthProvider({children}:{children:ReactNode}) {
     return()=>{active=false;manager.events.removeUserLoaded(loaded);manager.events.removeUserUnloaded(unloaded);manager.events.removeAccessTokenExpired(expired);manager.events.removeSilentRenewError(failed);};
   },[manager]);
   const login=async()=>{setError(null);try{const bytes=crypto.getRandomValues(new Uint8Array(32));const nonce=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');await manager.signinRedirect({nonce,state:{returnTo:safeReturnTo(window.location.pathname+window.location.search)}});}catch{setError('无法连接身份服务，请稍后重试。');}};
-  const logout=async()=>{manager.stopSilentRenew();try{await manager.revokeTokens(['refresh_token']);}catch{/* Local logout still proceeds; no credential is logged. */}await manager.removeUser();try{await manager.signoutRedirect({client_id:'knowledge-web'});}catch{setError('本机会话已清除；身份服务退出失败，可重新登录。');}};
+  const logout=async()=>{manager.stopSilentRenew();try{await manager.revokeTokens(['refresh_token']);}catch{/* Local logout still proceeds; no credential is logged. */}await manager.removeUser();try{await manager.signoutRedirect({post_logout_redirect_uri:window.location.origin+'/'});}catch{setError('本机会话已清除；身份服务退出失败，可重新登录。');}};
   return <AuthContext.Provider value={{user,loading,error,api,login,logout}}>{children}</AuthContext.Provider>;
 }
 export function useAuth(){const value=useContext(AuthContext);if(!value)throw new Error('AuthProvider required');return value;}

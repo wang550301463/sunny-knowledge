@@ -24,3 +24,18 @@ export async function recordDisplay(api: ApiClient, page: string, revision: stri
   });
   if (!value || typeof value.id !== "string" || !value.id || value.revision_id !== revision || typeof value.recorded_at !== "string" || !Number.isFinite(Date.parse(value.recorded_at))) throw new ApiError(502, "invalid_access_receipt");
 }
+/** Reconstructed 2026-09-09 per lifecycle-entry.test contract: stable per
+ * full-document navigation entry id ("history:<uuid>"), stored in
+ * history.state.knowledgeLifecycleEntry, new id when state is replaced. */
+export function displayNavigationEntry(fallback: string): string {
+  try {
+    const state = (window.history.state ?? {}) as Record<string, unknown>;
+    const existing = state.knowledgeLifecycleEntry;
+    if (typeof existing === "string" && /^history:[a-f0-9-]{36}$/.test(existing)) return existing;
+    const id = "history:" + crypto.randomUUID();
+    window.history.replaceState({ ...state, knowledgeLifecycleEntry: id }, "");
+    return id;
+  } catch {
+    return "history:" + (crypto.randomUUID?.() ?? fallback);
+  }
+}

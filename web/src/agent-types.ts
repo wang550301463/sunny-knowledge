@@ -12,7 +12,7 @@ export interface AgentAnswer{facts:AnswerClaim[];inferences:AnswerClaim[];gaps:s
 export interface AgentCitation{id:string;evidence:EvidenceRef;excerpt:string;page_id:string;revision_id:string;space_id:string;url:string}
 export type RunStatus="queued"|"running"|"completed"|"partial"|"failed"|"cancelled";
 export interface RunBase{id:string;session_id:string;status:RunStatus;event_seq:number;created_at:string;finished_at:string|null}
-export interface ReadableRun extends RunBase{content_hidden:false;agent_id:string;configuration_id:string;actual_scope:string[];question:string;answer:AgentAnswer|null;citations:AgentCitation[];usage:Record<string,number>;error_code:string|null;budget:AgentBudget;rounds:number;tool_calls:number}
+export interface ReadableRun extends RunBase{content_hidden:false;entrypoint?:string;answer_complete?:boolean;agent_id:string;configuration_id:string;actual_scope:string[];question:string;answer:AgentAnswer|null;citations:AgentCitation[];usage:Record<string,number>;error_code:string|null;budget:AgentBudget;rounds:number;tool_calls:number}
 export interface HiddenRun extends RunBase{content_hidden:true}
 export type AgentRun=ReadableRun|HiddenRun;
 export interface AgentCreate{name:string;description:string;owner_space_id:string;config:AgentConfig}

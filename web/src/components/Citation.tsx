@@ -12,7 +12,7 @@ export function CitationBody({snapshotId,evidence,startLine,endLine}:{snapshotId
   return <ResourceView resource={resource}>{snapshot=>{
     const start=evidence?.start_line??startLine??1,end=evidence?.end_line??endLine??sourceRows(snapshot.text).length;
     const mismatch=evidence&&(evidence.resource_id!==snapshot.resource_id||evidence.source_id!==snapshot.source_id||evidence.source_revision!==snapshot.source_revision||evidence.path!==snapshot.path||evidence.kind!==snapshot.kind);
-    if(mismatch||!Number.isInteger(start)||!Number.isInteger(end)||start<1||end<start||end>sourceRows(snapshot.text).length)return <Alert type="error" showIcon title="引用与原始快照不匹配，已停止展示。"/>;
+    if(mismatch||!Number.isInteger(start)||!Number.isInteger(end)||start<1||end<start||end>sourceRows(snapshot.text).length)return <Alert type="error" showIcon message="引用与原始快照不匹配，已停止展示。"/>;
     return <><div className="citation-meta"><Tag>{snapshot.kind}</Tag><Typography.Title level={4}>{snapshot.path}</Typography.Title><Typography.Paragraph type="secondary">来源 {snapshot.source_id}<br/>版本 <code>{snapshot.source_revision}</code><br/>行 {start}–{end}</Typography.Paragraph><Typography.Text type="secondary">快照 SHA-256</Typography.Text><div className="hash">{snapshot.sha256}</div></div><ExactSource text={snapshot.text} startLine={start} endLine={end}/><div className="citation-footer"><Button icon={<LinkOutlined/>} href={citationHref({revision_id:snapshotId,start_line:start,end_line:end})} target="_blank" rel="noopener noreferrer">打开受登录保护的引用</Button><Typography.Paragraph type="secondary">每次打开均重新检查当前权限。</Typography.Paragraph></div></>;
   }}</ResourceView>;
 }
