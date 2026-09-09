@@ -60,7 +60,23 @@ def initialize(root: Path):
     sql.append('GRANT CONNECT ON DATABASE knowledge_temporal_visibility TO temporal;')
     sql.append('ALTER DATABASE knowledge_temporal_visibility OWNER TO temporal;')
     write_private(local/'init-databases.sql', '\n'.join(sql)+'\n')
-    scopes = [{'name':n,'protocol':'openid-connect','attributes':{'include.in.token.scope':'true','display.on.consent.screen':'true'},'protocolMappers':[]} for n in ('knowledge:read','knowledge:write','knowledge:feedback')]
+    scopes = [
+        {'name': n, 'protocol': 'openid-connect', 'attributes': {'include.in.token.scope': 'true', 'display.on.consent.screen': 'true'}, 'protocolMappers': []}
+        for n in ('knowledge:read', 'knowledge:write', 'knowledge:feedback')
+    ]
+    # Standard OIDC profile/email scopes with the usual claim mappers, so the
+    # access token carries preferred_username/email/name (Keycloak 25+ no
+    # longer builds these in when the realm JSON overrides clientScopes).
+    scopes.append({'name': 'profile', 'protocol': 'openid-connect', 'attributes': {'include.in.token.scope': 'true', 'display.on.consent.screen': 'true'}, 'protocolMappers': [
+        {'name': 'username', 'protocol': 'openid-connect', 'protocolMapper': 'oidc-usermodel-property-mapper', 'consentRequired': False, 'config': {'user.attribute': 'username', 'claim.name': 'preferred_username', 'jsonString.label': 'preferred_username', 'id.token.claim': 'true', 'access.token.claim': 'true', 'userinfo.token.claim': 'true'}},
+        {'name': 'given name', 'protocol': 'openid-connect', 'protocolMapper': 'oidc-usermodel-property-mapper', 'consentRequired': False, 'config': {'user.attribute': 'firstName', 'claim.name': 'given_name', 'jsonString.label': 'given_name', 'id.token.claim': 'true', 'access.token.claim': 'true', 'userinfo.token.claim': 'true'}},
+        {'name': 'family name', 'protocol': 'openid-connect', 'protocolMapper': 'oidc-usermodel-property-mapper', 'consentRequired': False, 'config': {'user.attribute': 'lastName', 'claim.name': 'family_name', 'jsonString.label': 'family_name', 'id.token.claim': 'true', 'access.token.claim': 'true', 'userinfo.token.claim': 'true'}},
+        {'name': 'full name', 'protocol': 'openid-connect', 'protocolMapper': 'oidc-full-name-mapper', 'consentRequired': False, 'config': {'id.token.claim': 'true', 'access.token.claim': 'true', 'userinfo.token.claim': 'true'}},
+        {'name': 'email', 'protocol': 'openid-connect', 'protocolMapper': 'oidc-usermodel-property-mapper', 'consentRequired': False, 'config': {'user.attribute': 'email', 'claim.name': 'email', 'jsonString.label': 'email', 'id.token.claim': 'true', 'access.token.claim': 'true', 'userinfo.token.claim': 'true'}},
+    ]})
+    scopes.append({'name': 'email', 'protocol': 'openid-connect', 'attributes': {'include.in.token.scope': 'true', 'display.on.consent.screen': 'true'}, 'protocolMappers': [
+        {'name': 'email verified', 'protocol': 'openid-connect', 'protocolMapper': 'oidc-usermodel-property-mapper', 'consentRequired': False, 'config': {'user.attribute': 'emailVerified', 'claim.name': 'email_verified', 'jsonString.label': 'email_verified', 'id.token.claim': 'true', 'access.token.claim': 'true', 'userinfo.token.claim': 'true'}},
+    ]})
     audience_mapper = {'name':'knowledge-api-audience','protocol':'openid-connect','protocolMapper':'oidc-audience-mapper','config':{'included.custom.audience':'knowledge-api','id.token.claim':'false','access.token.claim':'true'}}
     client_common = {'enabled':True,'publicClient':True,'standardFlowEnabled':True,'directAccessGrantsEnabled':False,'redirectUris':['http://localhost:18180/auth/callback','http://127.0.0.1:18180/auth/callback','http://localhost:3000/auth/callback','http://127.0.0.1:3000/auth/callback'],'webOrigins':['http://localhost:18180','http://127.0.0.1:18180'],'defaultClientScopes':['basic','profile','email','knowledge:read','knowledge:write','knowledge:feedback'],'protocolMappers':[audience_mapper],'attributes':{'pkce.code.challenge.method':'S256'}}
     realm = {'realm':'knowledge','enabled':True,'registrationAllowed':False,'resetPasswordAllowed':False,'sslRequired':'external','accessTokenLifespan':300,'clientScopes':scopes,'clients':[dict(client_common,clientId='knowledge-web'),dict(client_common,clientId='knowledge-cli')],'users':[{'id':ADMIN_ID,'username':values['BOOTSTRAP_USERNAME'],'enabled':True,'emailVerified':True,'email':'admin@knowledge.local','firstName':'Knowledge','lastName':'Administrator','credentials':[{'type':'password','value':values['BOOTSTRAP_PASSWORD'],'temporary':False}]}]}

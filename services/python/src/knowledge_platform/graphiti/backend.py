@@ -28,17 +28,28 @@ class Neo4jGraph:
         return digest([self.settings.graphiti_namespace, revision_id, generation])
 
     async def initialize(self):
+        async def ddl(statement):
+            try:
+                await self.driver.execute_query(statement)
+            except Exception as exc:
+                # Neo4j 5 refuses CREATE CONSTRAINT when an equivalent index
+                # already exists (graphiti-core seeds some of them); that
+                # satisfies the intent, so tolerate schema-already-there.
+                if "AlreadyExists" not in type(exc).__name__ and "already exists" not in str(exc):
+                    raise
         try:
             async with asyncio.timeout(60):
-                if self.driver._init_task:
-                    await self.driver._init_task
-                await self.driver.execute_query('CREATE INDEX knowledge_graph_entity_projection IF NOT EXISTS FOR (n:Entity) ON (n.knowledge_projection)')
-                await self.driver.execute_query('CREATE INDEX knowledge_graph_entity_identity IF NOT EXISTS FOR (n:Entity) ON (n.knowledge_namespace, n.knowledge_entity_id)')
-                await self.driver.execute_query('CREATE INDEX knowledge_graph_edge_projection IF NOT EXISTS FOR ()-[r:RELATES_TO]-() ON (r.knowledge_projection)')
-                await self.driver.execute_query('CREATE CONSTRAINT knowledge_graph_entity_uuid IF NOT EXISTS FOR (n:Entity) REQUIRE n.uuid IS UNIQUE')
-                await self.driver.execute_query('CREATE CONSTRAINT knowledge_graph_episode_uuid IF NOT EXISTS FOR (n:Episodic) REQUIRE n.uuid IS UNIQUE')
-        except Exception:
-            raise unavailable() from None
+                init_task = getattr(self.driver, "_init_task", None)
+                if init_task:
+                    await init_task
+                await ddl('CREATE INDEX knowledge_graph_entity_projection IF NOT EXISTS FOR (n:Entity) ON (n.knowledge_projection)')
+                await ddl('CREATE INDEX knowledge_graph_entity_identity IF NOT EXISTS FOR (n:Entity) ON (n.knowledge_namespace, n.knowledge_entity_id)')
+                await ddl('CREATE INDEX knowledge_graph_edge_projection IF NOT EXISTS FOR ()-[r:RELATES_TO]-() ON (r.knowledge_projection)')
+                await ddl('CREATE CONSTRAINT knowledge_graph_entity_uuid IF NOT EXISTS FOR (n:Entity) REQUIRE n.uuid IS UNIQUE')
+                await ddl('CREATE CONSTRAINT knowledge_graph_episode_uuid IF NOT EXISTS FOR (n:Episodic) REQUIRE n.uuid IS UNIQUE')
+        except Exception as exc:
+            logging.getLogger(__name__).exception("neo4j initialize failed")
+            raise unavailable() from exc
 
     async def ready(self):
         await self._query('RETURN 1 AS ready')
