@@ -41,6 +41,12 @@ dist/
 # --- Go ---
 *.test
 bin/
+# 编译产物（曾在 init 3 误入库，共 96 MB）
+/services/go/auth
+/services/go/channel
+/services/go/gateway
+/services/go/iam
+/services/go/contract-export
 
 # --- 工具与编辑 ---
 .idea/
