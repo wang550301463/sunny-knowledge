@@ -76,6 +76,10 @@ class IngestService:
                 'has_credential': bool(version.credential_ciphertext), 'state': source.state,
                 'created_by': source.created_by, 'created_at': source.created_at.isoformat(),
                 'updated_at': source.updated_at.isoformat(), 'latest_task_id': source.latest_task_id,
+                'auto_sync': source.auto_sync,
+                'auto_sync_interval_seconds': source.auto_sync_interval_seconds,
+                'last_auto_sync_at': source.last_auto_sync_at.isoformat() if source.last_auto_sync_at else None,
+                'last_seen_revision': source.last_seen_revision,
                 'preview': {k: preview.manifest[k] for k in ('source_revision', 'file_count', 'total_bytes')} if preview else None}
 
     async def create(self, token, body):
@@ -90,7 +94,8 @@ class IngestService:
         # Resource registration legitimately advances IAM epoch; discard all preflight decisions.
         self.epoch = None
         source = Source(id=source_id, name=body.name, space_id=body.space_id, resource_id=resource_id,
-                        kind=body.kind, version=1, state='active', created_by=actor.id)
+                        kind=body.kind, version=1, state='active', created_by=actor.id,
+                        auto_sync=body.auto_sync, auto_sync_interval_seconds=body.auto_sync_interval_seconds)
         actor = await self.authorize(token, source, write=True)
         await self.worker(source.space_id, source.resource_id)
         credential = self.box.encrypt(json.dumps(body.credential.plain()), f'{source_id}:1') if body.credential else None
@@ -125,10 +130,12 @@ class IngestService:
         plaintext = self.box.decrypt(old.credential_ciphertext, f'{source.id}:{source.version}') if old.credential_ciphertext else None
         if 'credential' in body.model_fields_set:
             plaintext = json.dumps(body.credential.plain()) if body.credential else None
-        if source.kind != 'git' and plaintext:
-            raise IngestError(422, 'invalid_source', 'Only Git sources accept credentials')
+        if source.kind not in ('git', 'oss') and plaintext:
+            raise IngestError(422, 'invalid_source', 'Only Git and OSS sources accept credentials')
         source.version += 1
         source.name, source.updated_at = body.name, now()
+        source.auto_sync = body.auto_sync
+        source.auto_sync_interval_seconds = body.auto_sync_interval_seconds
         self.session.add(SourceVersion(source_id=source.id, version=source.version, config=body.config,
             credential_ciphertext=self.box.encrypt(plaintext, f'{source.id}:{source.version}') if plaintext else None,
             created_by=actor.id))

@@ -191,3 +191,82 @@ class GitConnector:
             file_kind, issues = classify(path, data)
             files.append(RawFile(path, data, file_kind, issues))
         return RawSnapshot(commit, tuple(files), tuple(diagnostics))
+
+class OSSConnector:
+    """S3-compatible object-storage capture (Aliyun OSS, COS, AWS S3, MinIO).
+
+    Credential keys reuse the generic pair: username=AccessKeyId,
+    password=AccessKeySecret; both are stored encrypted per source version.
+    The revision is a deterministic digest over the ordered (key, etag, size)
+    listing, so an unchanged prefix is detected without downloading bodies.
+    """
+
+    def __init__(self, limits: SnapshotLimits | None = None):
+        self.limits = limits or SnapshotLimits()
+
+    def _client(self, config: dict, credential: dict | None):
+        import boto3
+        from botocore.config import Config
+        try:
+            return boto3.client('s3', endpoint_url=config['endpoint'],
+                aws_access_key_id=(credential or {}).get('username'),
+                aws_secret_access_key=(credential or {}).get('password'),
+                config=Config(connect_timeout=5, read_timeout=30,
+                              retries={'max_attempts': 3, 'mode': 'standard'},
+                              s3={'addressing_style': 'path'}))
+        except Exception:
+            raise IngestError(503, 'dependency_unavailable', 'Object storage client unavailable') from None
+
+    def capture(self, config: dict, credential: dict | None, version: int):
+        from botocore.exceptions import BotoCoreError, ClientError
+        validate_config('oss', config)
+        client = self._client(config, credential)
+        prefix = config['prefix']
+        entries: list[tuple[str, str, int]] = []
+        token = None
+        try:
+            while True:
+                arguments = {'Bucket': config['bucket'], 'MaxKeys': 1000, 'Prefix': prefix}
+                if token:
+                    arguments['ContinuationToken'] = token
+                page = client.list_objects_v2(**arguments)
+                for item in page.get('Contents', []):
+                    entries.append((item['Key'], item.get('ETag', ''), int(item['Size'])))
+                if not page.get('IsTruncated') or len(entries) > self.limits.max_files:
+                    break
+                token = page.get('NextContinuationToken')
+                if not token:
+                    break
+        except (ClientError, BotoCoreError) as error:
+            raise IngestError(422, 'oss_list_failed',
+                              'Object listing failed; check endpoint, bucket, prefix and credentials') from error
+        if len(entries) > self.limits.max_files:
+            raise IngestError(422, 'source_limit_exceeded', 'Object count exceeds file budget')
+        files, diagnostics, total = [], [], 0
+        for key, etag, size in sorted(entries):
+            try:
+                validate_path(key)
+            except ValueError:
+                diagnostics.append('invalid_path_skipped:' + key)
+                continue
+            if size > self.limits.max_file_bytes or total + size > self.limits.max_bytes:
+                raise IngestError(422, 'source_limit_exceeded', 'Object store exceeds content byte budget')
+            try:
+                body = client.get_object(Bucket=config['bucket'], Key=key)['Body']
+                try:
+                    data = body.read(self.limits.max_file_bytes + 1)
+                finally:
+                    body.close()
+            except (ClientError, BotoCoreError) as error:
+                raise IngestError(422, 'oss_read_failed', 'Object read failed') from error
+            if len(data) != size:
+                raise IngestError(422, 'invalid_source', 'Object length mismatch with listing')
+            total += size
+            file_kind, issues = classify(key, data)
+            files.append(RawFile(key, data, file_kind, issues))
+        # Revision is derived from content digests, not provider ETags: weak or
+        # non-content ETags must never hide a changed object.
+        revision = 'oss:' + hashlib.sha256(json.dumps(
+            [[f.path, len(f.data), f.digest] for f in sorted(files, key=lambda f: f.path)],
+            ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
+        return RawSnapshot(revision, tuple(files), tuple(diagnostics))

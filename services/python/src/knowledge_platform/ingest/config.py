@@ -21,3 +21,5 @@ class IngestSettings(Settings):
     ingest_max_git_disk_bytes: int = Field(default=256_000_000, ge=1)
     ingest_git_timeout_seconds: int = Field(default=120, ge=1, le=900)
     ingest_preview_concurrency: int = Field(default=2, ge=1, le=8)
+    ingest_auto_sync_enabled: bool = True
+    ingest_auto_sync_tick_seconds: float = Field(default=60, ge=5, le=3600)

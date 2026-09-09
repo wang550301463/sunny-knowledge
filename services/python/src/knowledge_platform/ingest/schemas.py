@@ -47,6 +47,26 @@ def validate_remote(value: str) -> str:
 
 
 def validate_config(kind: str, config: dict) -> dict:
+    if kind == 'oss':
+        if set(config) != {'endpoint', 'bucket', 'prefix'}:
+            raise ValueError('OSS config requires endpoint, bucket and prefix')
+        endpoint = config['endpoint']
+        try:
+            u = urlsplit(endpoint)
+            port = u.port
+        except ValueError:
+            raise ValueError('Invalid OSS endpoint') from None
+        if (u.scheme not in ('http', 'https') or not u.hostname or u.path not in ('', '/')
+                or u.query or u.fragment or u.username is not None or u.password is not None
+                or (port is not None and not 1 <= port <= 65535)):
+            raise ValueError('OSS endpoint must be an HTTP(S) URL without credentials')
+        bucket = config['bucket']
+        if not isinstance(bucket, str) or not re.fullmatch(r'[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]', bucket):
+            raise ValueError('Invalid OSS bucket name')
+        prefix = config['prefix']
+        if not isinstance(prefix, str) or len(prefix) > 1024 or prefix.startswith('/') or '\\' in prefix or ':' in prefix or any(ord(c) < 32 for c in prefix) or '..' in prefix.split('/'):
+            raise ValueError('OSS prefix must be a relative object prefix')
+        return config
     if kind == 'git':
         if set(config) != {'url', 'ref'}:
             raise ValueError('Git config requires url and ref')
@@ -100,15 +120,19 @@ class Credential(StrictModel):
 class SourceCreate(StrictModel):
     name: str = Field(min_length=1, max_length=256)
     space_id: str = Field(min_length=1, max_length=512)
-    kind: Literal['git', 'markdown', 'ticket']
+    kind: Literal['git', 'oss', 'markdown', 'ticket']
     config: dict
     credential: Credential | None = None
+    auto_sync: bool = False
+    auto_sync_interval_seconds: int = Field(default=3600, ge=300, le=86400)
 
     @model_validator(mode='after')
     def configured(self):
         validate_config(self.kind, self.config)
-        if self.kind != 'git' and self.credential is not None:
-            raise ValueError('Only Git sources accept credentials')
+        if self.kind not in ('git', 'oss') and self.credential is not None:
+            raise ValueError('Only Git and OSS sources accept credentials')
+        if self.kind in ('markdown', 'ticket') and self.auto_sync:
+            raise ValueError('Only Git and OSS sources support automatic synchronization')
         return self
 
 
@@ -117,6 +141,8 @@ class SourceUpdate(StrictModel):
     name: str = Field(min_length=1, max_length=256)
     config: dict
     credential: Credential | None = None
+    auto_sync: bool = False
+    auto_sync_interval_seconds: int = Field(default=3600, ge=300, le=86400)
 
 
 class VersionRequest(StrictModel):

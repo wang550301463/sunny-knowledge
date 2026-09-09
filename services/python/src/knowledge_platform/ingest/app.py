@@ -18,7 +18,8 @@ from knowledge_platform.common.security import ServiceSecurity, bearer_token, se
 from knowledge_platform.common.secrets import SecretBox
 from .clients import InternalClient, MachineTokens
 from .config import IngestSettings
-from .connectors import GitConnector, SnapshotLimits, UploadConnector
+from .auto_sync import auto_sync_loop, auto_sync_source
+from .connectors import GitConnector, OSSConnector, SnapshotLimits, UploadConnector
 from .models import initialize
 from .schemas import IngestError, SourceCreate, SourceUpdate, VersionRequest
 from .service import IngestService
@@ -62,8 +63,17 @@ def create_app(*, database=None, authorizer=None, security=None, machine=None, i
             max_files=config.ingest_max_snapshot_files, max_git_disk_bytes=config.ingest_max_git_disk_bytes,
             timeout_seconds=config.ingest_git_timeout_seconds)
         if initialize_schema: await initialize(state.database.engine)
+
+        def auto_sync_service(session):
+            return IngestService(session, state.authorizer, state.machine, state.internal, state.secret_box)
+        state.auto_sync_service = auto_sync_service
+        state.auto_sync_task = None
+        if config.ingest_auto_sync_enabled:
+            state.auto_sync_task = asyncio.create_task(auto_sync_loop(state, config.ingest_auto_sync_tick_seconds))
         try: yield
         finally:
+            if state.auto_sync_task is not None:
+                state.auto_sync_task.cancel()
             for value, supplied in ((state.authorizer, authorizer), (state.machine, machine),
                                      (state.internal, internal), (state.database, database)):
                 if supplied is None: await value.close()
@@ -145,7 +155,9 @@ def create_app(*, database=None, authorizer=None, security=None, machine=None, i
             async with request.app.state.database.session() as session, session.begin():
                 data = await new_service(request, session).preview_input(token, source_id, body.base_version)
             if 'preview' in data: return data['preview']
-            connector = GitConnector(request.app.state.limits) if data['kind'] == 'git' else UploadConnector(data['kind'], request.app.state.limits)
+            connector = ({'git': lambda: GitConnector(request.app.state.limits),
+                          'oss': lambda: OSSConnector(request.app.state.limits)}.get(data['kind'],
+                         lambda: UploadConnector(data['kind'], request.app.state.limits)))()
             snapshot = await asyncio.to_thread(connector.capture, data['config'], data['credential'], body.base_version)
             key, manifest = await asyncio.to_thread(request.app.state.storage.put_snapshot, source_id, body.base_version, snapshot)
             async with request.app.state.database.session() as session, session.begin():
@@ -154,6 +166,14 @@ def create_app(*, database=None, authorizer=None, security=None, machine=None, i
     @app.post('/api/v1/sources/{source_id}/sync', status_code=202)
     async def sync(source_id: str, body: VersionRequest, service: Service, token: Token):
         return await service.sync(token, source_id, body.base_version)
+
+    @app.post('/api/v1/sources/{source_id}/auto-sync')
+    async def trigger_auto_sync(source_id: str, request: Request, token: Token):
+        # Authorize like any write, then run the automatic capture path once.
+        async with request.app.state.database.session() as session, session.begin():
+            await new_service(request, session).authorize(
+                token, await new_service(request, session).source(source_id), write=True)
+        return await auto_sync_source(request.app.state, source_id)
 
     @app.delete('/api/v1/sources/{source_id}', status_code=202)
     async def delete(source_id: str, body: VersionRequest, service: Service, token: Token):
