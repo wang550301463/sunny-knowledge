@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/wang550301463/sunny-knowledge/services/go/internal/generatedcontracts"
 	"io"
 	"net/http"
 	"strings"
@@ -18,8 +17,8 @@ type Client struct {
 	HTTP     *http.Client
 }
 
-func NewClient(service string, security *ServiceSecurity) *Client {
-	return &Client{Service: service, Security: security, HTTP: &http.Client{Transport: TraceTransport{}, Timeout: 10 * time.Second, CheckRedirect: func(req *http.Request, via []*http.Request) error { return http.ErrUseLastResponse }}}
+func NewClient(service, secret string) *Client {
+	return &Client{Service: service, Security: NewServiceSecurity(secret), HTTP: &http.Client{Timeout: 10 * time.Second}}
 }
 func (c *Client) Call(ctx context.Context, target, base, method, path, bearer string, input, output any) error {
 	var body io.Reader
@@ -30,7 +29,7 @@ func (c *Client) Call(ctx context.Context, target, base, method, path, bearer st
 		}
 		body = bytes.NewReader(b)
 	}
-	req, err := http.NewRequestWithContext(context.WithValue(ctx, targetKey{}, target), method, strings.TrimRight(base, "/")+path, body)
+	req, err := http.NewRequestWithContext(ctx, method, strings.TrimRight(base, "/")+path, body)
 	if err != nil {
 		return err
 	}
@@ -43,7 +42,6 @@ func (c *Client) Call(ctx context.Context, target, base, method, path, bearer st
 		req.Header.Set("Authorization", bearer)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Request-ID", RequestID(ctx))
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
 		return fmt.Errorf("%s unavailable", target)
@@ -63,11 +61,6 @@ type HTTPError struct{ Status int }
 func (e *HTTPError) Error() string { return fmt.Sprintf("upstream request rejected (%d)", e.Status) }
 func (c *Client) Resolve(ctx context.Context, authURL, bearer string) (Resolved, error) {
 	var v Resolved
-	operation := generatedcontracts.Operations["auth_post_internal_v1_resolve"]
-	request, err := operation.Prepare(nil, nil, json.RawMessage(`{}`), nil)
-	if err != nil {
-		return v, err
-	}
-	err = c.Call(ctx, request.Service, authURL, request.Method, request.Path, bearer, request.Body, &v)
+	err := c.Call(ctx, "auth", authURL, "POST", "/internal/v1/resolve", bearer, struct{}{}, &v)
 	return v, err
 }

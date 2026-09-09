@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"flag"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/wang550301463/sunny-knowledge/services/go/internal/channel"
@@ -20,7 +21,11 @@ func main() {
 	if e != nil {
 		log.Fatal("channel workload identity unavailable")
 	}
-	box, e := channel.SecretBoxFromBase64(os.Getenv("CHANNEL_ENCRYPTION_KEY"))
+	key, e := base64.StdEncoding.DecodeString(os.Getenv("CHANNEL_ENCRYPTION_KEY"))
+	if e != nil {
+		log.Fatal("channel encryption key invalid")
+	}
+	box, e := channel.NewSecretBox(key)
 	if e != nil {
 		log.Fatal("channel encryption key invalid")
 	}
@@ -40,15 +45,9 @@ func main() {
 	agent := platform.Env("AGENT_URL", "http://agent:8080")
 	iam := platform.Env("IAM_URL", "http://iam:8080")
 	if *worker {
-		telemetry, err := platform.StartTelemetryFromEnv("channel-worker")
-		if err != nil {
-			log.Fatal("channel worker telemetry unavailable")
-		}
-		defer telemetry.Close()
 		ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 		defer cancel()
-		adapter := &channel.HTTPAgentClient{Client: client, AuthURL: auth, AgentURL: agent, WebURL: os.Getenv("CHANNEL_WEB_URL")}
-		w := channel.NewWorker(s, adapter, channel.WorkerOptions{Transport: channel.TransportOptions{URL: platform.Env("CHANNEL_WS_URL", channel.DefaultWebSocketURL), AllowLoopback: os.Getenv("CHANNEL_ALLOW_LOOPBACK_WS") == "true"}, WebURL: os.Getenv("CHANNEL_WEB_URL")})
+		w := channel.NewWorker(s, nil, channel.WorkerOptions{Transport: channel.TransportOptions{URL: platform.Env("CHANNEL_WS_URL", channel.DefaultWebSocketURL), AllowLoopback: os.Getenv("CHANNEL_ALLOW_LOOPBACK_WS") == "true"}, WebURL: os.Getenv("CHANNEL_WEB_URL")})
 		if w.Run(ctx) != nil {
 			log.Fatal("channel worker stopped: dependency unavailable")
 		}

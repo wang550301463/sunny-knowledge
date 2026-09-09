@@ -1,0 +1,10 @@
+.git
+.worktrees
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/node_modules
+**/dist
+knowledge-docker/.env
+knowledge-docker/.local
+knowledge-docker/artifacts

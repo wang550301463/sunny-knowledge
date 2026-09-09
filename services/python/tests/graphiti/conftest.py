@@ -1,0 +1,1 @@
+from .test_postgres import catalog  # noqa: F401

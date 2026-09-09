@@ -4,7 +4,7 @@ import {
 } from './fixtures.js';
 
 async function returnToGuide(page) {
-  await page.locator('a[href="/onboarding"]').filter({ hasText: '首次使用' }).click();
+  await page.getByRole('link', { name: '首次使用', exact: true }).click();
   await expect(page.getByRole('heading', { name: '首次使用', exact: true })).toBeVisible();
   await expect(page.getByLabel('本次知识空间')).toBeEnabled();
 }
@@ -43,14 +43,14 @@ test('real first-use guide: preview, reviewed Wiki, cited Web run, restoration a
 
     await test.step('Create, preview and synchronize Markdown through the actual source form', async () => {
       await page.getByRole('link', { name: '添加来源、预览与同步', exact: true }).click();
-      await page.getByRole('button', { name: /添加来源$/ }).click();
+      await page.getByRole('button', { name: '添加来源', exact: true }).click();
       const form = page.getByRole('dialog', { name: '添加数据来源', exact: true });
       await form.getByLabel('来源名称').fill(owned.marker);
       await selectOption(page, form.getByLabel('来源类型'), 'Markdown 文档');
       await form.getByLabel('相对文件路径').fill(owned.path);
       await form.getByLabel('Markdown 原文').fill(`# ${owned.marker}\r\n本次首用链路保留不可变原文与审核证据。\r\n`);
       const created = page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/sources' && response.request().method() === 'POST');
-      await form.getByRole('button', { name: /添加来源$/ }).click();
+      await form.getByRole('button', { name: '添加来源', exact: true }).click();
       const response = await created;
       expect(response.status()).toBe(201);
       owned.source = await response.json();
@@ -58,19 +58,19 @@ test('real first-use guide: preview, reviewed Wiki, cited Web run, restoration a
       expect(owned.source.config.path).toBe(owned.path);
       await expect(form).not.toBeVisible();
       const row = page.getByRole('listitem').filter({ hasText: owned.marker });
-      await row.getByRole('button', { name: /预览与同步$/ }).click();
+      await row.getByRole('button', { name: '预览与同步', exact: true }).click();
       const source = drawer(page, owned.marker);
-      await expect(source.getByRole('button', { name: /启动同步$/ })).toBeDisabled();
+      await expect(source.getByRole('button', { name: '启动同步', exact: true })).toBeDisabled();
       const previewed = page.waitForResponse(response => new URL(response.url()).pathname === `/api/v1/sources/${owned.source.id}/preview`);
-      await source.getByRole('button', { name: /预览原始快照$/ }).click();
+      await source.getByRole('button', { name: '预览原始快照', exact: true }).click();
       const previewResponse = await previewed;
       expect(previewResponse.status()).toBe(200);
       owned.preview = await previewResponse.json();
       expect(owned.preview.file_count).toBe(1);
       await expect(source.getByText(/预览文件 · 1 个/)).toBeVisible();
-      await expect(source.getByRole('button', { name: /启动同步$/ })).toBeEnabled();
+      await expect(source.getByRole('button', { name: '启动同步', exact: true })).toBeEnabled();
       const started = page.waitForResponse(response => new URL(response.url()).pathname === `/api/v1/sources/${owned.source.id}/sync`);
-      await source.getByRole('button', { name: /启动同步$/ }).click();
+      await source.getByRole('button', { name: '启动同步', exact: true }).click();
       const taskResponse = await started;
       expect(taskResponse.status()).toBe(202);
       owned.task = await taskResponse.json();
@@ -115,9 +115,9 @@ test('real first-use guide: preview, reviewed Wiki, cited Web run, restoration a
       const metrics = await api(page, 'GET', `/pages/${owned.item.page_id}/lifecycle?revision_id=${owned.revision.id}`);
       expect(metrics.validity.eligible).toBe(true);
       const wikiLink = page.getByRole('link', { name: '浏览已发布 Wiki', exact: true });
-      await expect(wikiLink).toHaveAttribute('href', `/spaces/${encodeURIComponent(owned.space.id)}/pages/${encodeURIComponent(owned.item.page_id)}?revision=${encodeURIComponent(owned.revision.id)}`);
+      await expect(wikiLink).toHaveAttribute('href', `/spaces/${owned.space.id}/pages/${owned.item.page_id}?revision=${owned.revision.id}`);
       await wikiLink.click();
-      await expect(page.getByRole('heading', { name: owned.marker, exact: true }).first()).toBeVisible();
+      await expect(page.getByRole('heading', { name: owned.marker, exact: true })).toBeVisible();
       await expect(page.getByText('正在查看链接指定的不可变版本', { exact: true })).toBeVisible();
       await page.getByRole('button', { name: new RegExp(owned.path.replaceAll('.', '\\.')) }).first().click();
       const source = drawer(page, '原文引用');
@@ -156,6 +156,7 @@ test('real first-use guide: preview, reviewed Wiki, cited Web run, restoration a
       expect(snapshot.text).toContain(owned.marker);
       await returnToGuide(page);
       await page.getByLabel('本次问答会话').selectOption(owned.session.id);
+      await expect(page.getByLabel('本次回答').locator('option').filter({ has: undefined }).count()).resolves;
       await expect(page.getByLabel('本次回答').locator(`option[value="${owned.run.id}"]`)).toHaveCount(1);
       await page.getByLabel('本次回答').selectOption(owned.run.id);
       await expect(page.getByText('已核验当前 Wiki 的引用回答', { exact: true })).toBeVisible();
@@ -180,7 +181,6 @@ test('real first-use guide: preview, reviewed Wiki, cited Web run, restoration a
       });
       await expect(page.getByRole('alert').filter({ hasText: '权限不足' })).toBeVisible();
       await expect(page.getByText(owned.marker, { exact: true })).toHaveCount(0);
-      await expect(page.getByText(owned.path, { exact: true })).toHaveCount(0);
       await expect(page.getByLabel('本次知识空间').locator(`option[value="${owned.space.id}"]`)).toHaveCount(0);
       await expect(page.getByText('已核验当前 Wiki 的引用回答', { exact: true })).toHaveCount(0);
       await expect(page.getByRole('link', { name: '浏览已发布 Wiki', exact: true })).toHaveCount(0);

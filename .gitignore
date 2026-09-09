@@ -5,3 +5,44 @@ data/graph.json
 web/node_modules/
 web/dist/
 .DS_Store
+
+# --- 密钥与本地环境（方案 §2：业务密钥不写入仓库）---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# --- 构建/验收产物（曾导致 1.3 万个空文件入库）---
+**/.local/
+
+# --- 从 Codex 会话日志恢复的代码（待人工合并，不入库）---
+.recovered/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# --- Node ---
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# --- Go ---
+*.test
+bin/
+
+# --- 工具与编辑 ---
+.idea/
+.vscode/
+*.log

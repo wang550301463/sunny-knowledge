@@ -1,34 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { test, expect, publicURL, realLogin, drawer, selectOption } from '../web_agent/fixtures.js';
+import { test, expect, publicURL, realLogin, api, request, drawer, selectOption } from '../web_agent/fixtures.js';
 import { workerID } from '../web/fixtures.js';
 
-export { test, expect, publicURL, realLogin, drawer, selectOption };
+export { test, expect, publicURL, realLogin, api, request, drawer, selectOption };
 export const output = '/artifacts/web-onboarding';
 export const provider = 'http://onboarding-model-provider:8080';
-
-// Use the real browser's current bearer in its own process. Bound setup and
-// cleanup requests as well as assertions; an uncertain mutation is never retried.
-export async function request(page, method, path, body) {
-  return page.evaluate(async ({ method, path, body }) => {
-    const key = Object.keys(sessionStorage).find(name => name.startsWith('knowledge.session.user:'));
-    if (!key) return { status: 401, data: null };
-    const current = JSON.parse(sessionStorage.getItem(key));
-    const response = await fetch('/api/v1' + path, {
-      method, credentials: 'omit', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(15_000),
-      headers: { Authorization: 'Bearer ' + current.access_token, 'Content-Type': 'application/json' },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    });
-    const text = await response.text();
-    return { status: response.status, data: response.headers.get('content-type')?.includes('application/json') ? JSON.parse(text) : null };
-  }, { method, path, body });
-}
-
-export async function api(page, method, path, body, status = 200) {
-  const response = await request(page, method, path, body);
-  expect(response.status, `${method} ${path}: current authorized API status`).toBe(status);
-  return response.data;
-}
 
 export function record(name, value) {
   mkdirSync(output, { recursive: true });

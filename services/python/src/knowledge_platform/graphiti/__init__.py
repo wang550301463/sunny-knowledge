@@ -1,0 +1,1 @@
+"""Evidence-preserving Graphiti temporal projection and authorized adjacency traversal."""

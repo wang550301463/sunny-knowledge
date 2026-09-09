@@ -7,30 +7,6 @@ import (
 	"github.com/wang550301463/sunny-knowledge/services/go/internal/platform"
 )
 
-func (h *Handler) audienceActor(w http.ResponseWriter, r *http.Request) (platform.Principal, bool) {
-	resolved, err := h.Client.Resolve(r.Context(), h.AuthURL, r.Header.Get("Authorization"))
-	if err != nil {
-		var upstream *platform.HTTPError
-		if errors.As(err, &upstream) && (upstream.Status == 401 || upstream.Status == 403) {
-			platform.Error(w, r, upstream.Status, "unauthorized", "Valid active user required")
-		} else {
-			platform.Error(w, r, 503, "authorization_unavailable", "Authorization unavailable")
-		}
-		return platform.Principal{}, false
-	}
-	write := false
-	for _, scope := range resolved.Scopes {
-		if scope == "knowledge:write" {
-			write = true
-		}
-	}
-	if resolved.Delegated || !write {
-		platform.Error(w, r, 403, "forbidden", "Direct administrator authorization required")
-		return platform.Principal{}, false
-	}
-	return resolved.Principal, true
-}
-
 func (h *Handler) createAudience(w http.ResponseWriter, r *http.Request) {
 	if !caller(w, r, "channel") {
 		return
@@ -49,7 +25,7 @@ func (h *Handler) createAudience(w http.ResponseWriter, r *http.Request) {
 		platform.Error(w, r, 400, "group_disclosure_required", "Explicit group audience disclosure acknowledgement required")
 		return
 	}
-	actor, ok := h.audienceActor(w, r)
+	actor, ok := h.resolve(w, r)
 	if !ok {
 		return
 	}
@@ -80,7 +56,7 @@ func (h *Handler) updateAudience(w http.ResponseWriter, r *http.Request) {
 		platform.Error(w, r, 400, "invalid_request", "An explicit state and group disclosure acknowledgement are required")
 		return
 	}
-	actor, ok := h.audienceActor(w, r)
+	actor, ok := h.resolve(w, r)
 	if !ok {
 		return
 	}

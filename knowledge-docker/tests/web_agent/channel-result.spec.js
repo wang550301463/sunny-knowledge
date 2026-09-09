@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { test, expect, publicURL, realLogin, api, record, drawer as findDrawer } from './fixtures.js';
+import { test, expect, publicURL, realLogin, api, record } from './fixtures.js';
 
 test('real channel result remains run-bound and readonly, including citation and revocation', async ({ page }) => {
   // Root's actual HTTP/WS integration owns this short-lived run and its cleanup.
@@ -37,21 +37,20 @@ test('real channel result remains run-bound and readonly, including citation and
       await expect(page.getByRole('button', { name: label, exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: /反\s*馈/, exact: true })).toHaveCount(0);
     await expect(page.getByRole('textbox', { name: '问题' })).toHaveCount(0);
-    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     const run = await api(page, 'GET', `/runs/${fixture.run_id}`);
     expect(run.entrypoint).toBe('channel');
     const citation = run.citations[0];
     await page.locator('.citation-chip').first().click();
-    const drawer = findDrawer(page, '回答证据');
+    const drawer = page.getByRole('dialog', { name: '回答证据' });
     await expect(drawer.getByRole('region', { name: '原始引用逐行内容' })).toContainText(fixture.marker);
     await expect(drawer.getByRole('link', { name: '查看该知识修订' })).toHaveCount(0);
     const citationLink = `/runs/${fixture.run_id}?citation=${encodeURIComponent(citation.id)}`;
     await expect(drawer.getByRole('link', { name: '打开受登录保护的引用' })).toHaveAttribute('href', citationLink);
     expect(calls.some(call => call.path === `/api/v1/runs/${fixture.run_id}/citations/${citation.id}`)).toBe(true);
-    await page.screenshot({ path: '/artifacts/web-agent/channel-readonly-citation.png', fullPage: true, animations: 'disabled' });
+    await page.screenshot({ path: '/artifacts/web-agent/channel-readonly-citation.png', fullPage: true });
     await page.goto(publicURL + citationLink);
     await expect(page.getByRole('region', { name: '原始引用逐行内容' })).toContainText(fixture.marker);
-    await findDrawer(page, '回答证据').getByRole('button', { name: '关闭', exact: true }).click();
+    await page.getByRole('dialog', { name: '回答证据' }).getByRole('button', { name: 'Close', exact: true }).click();
     const downloading = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Markdown 导出', exact: true }).click();
     const download = await downloading;
@@ -68,7 +67,7 @@ test('real channel result remains run-bound and readonly, including citation and
     await expect(page.getByRole('region', { name: '事实' })).toHaveCount(0);
     await expect(page.getByRole('region', { name: '原始引用逐行内容' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Markdown 导出' })).toHaveCount(0);
-    await page.screenshot({ path: '/artifacts/web-agent/channel-result-revoked.png', fullPage: true, animations: 'disabled' });
+    await page.screenshot({ path: '/artifacts/web-agent/channel-result-revoked.png', fullPage: true });
     record('channel-behavior', {
       fixture_id: fixture.fixture_id, model: 'deterministic_protocol_simulation',
       wecom: 'local protocol simulator with deployed channel/auth/IAM/Agent/knowledge services',

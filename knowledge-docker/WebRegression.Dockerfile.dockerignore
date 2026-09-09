@@ -1,0 +1,7 @@
+**
+!knowledge-docker
+!knowledge-docker/tests
+!knowledge-docker/tests/web
+!knowledge-docker/tests/web/**
+knowledge-docker/tests/web/node_modules
+knowledge-docker/tests/web/test-results

@@ -4,7 +4,7 @@ global:
 scrape_configs:
   - job_name: knowledge-services
     static_configs:
-      - targets: [knowledge:9090, ingest:9090, retrieval:9090, llm:9090, graphiti:9090, agent:9090, mcp:9090, gateway:9090, iam:9090, auth:9090, channel:9090, channel-worker:9090, ingest-worker:9090, retrieval-worker:9090, graphiti-worker:9090]
+      - targets: [knowledge:9090, ingest:9090, retrieval:9090, llm:9090, graphiti:9090, agent:9090, mcp:9090, gateway:9090, iam:9090, auth:9090, channel:9090]
   - job_name: prometheus
     static_configs:
       - targets: [localhost:9090]

@@ -1,0 +1,26 @@
+# Knowledge graph explorer
+
+The knowledge-space graph tab uses the existing authorized Retrieval contracts. It does not call a new entity enumeration endpoint or bypass the gateway. Wiki remains authoritative; the diagram is an evidence-backed navigation view.
+
+## Workflow and data
+
+1. An explicit search posts `/api/v1/search` with the current space, query, `limit: 12`, optional business `as_of`, optional observation cutoff `known_at`, and `include_historical`. It omits `relation`, so seed discovery does not request automatic graph expansion. Search needs the configured embedding/reranking adapters and projected index; missing configuration is shown with a model-settings link.
+2. Select authorized returned fragment IDs and expand with `/api/v1/traverse`. The form supports all nine contractual relations, outgoing/incoming/both, and one/two hops. The backend owns the 100-node/200-edge budgets. No names, entity types, claims, edges, or answers are fabricated.
+3. The current execution snapshot is displayed separately from unsubmitted query/filter inputs. Editing filters does not change the current graph; applying new filters or searching again is explicit. Blank dates use request-time current state, while populated dates are converted from browser local time to timezone-aware ISO values. Historical results are only the revisions actually projected. A production deployment is never inferred.
+4. The SVG layout is deterministic and scrolls within the page. Arrows always retain the returned source-to-target direction; inference edges are dashed. Keyboard-accessible node controls and parallel node/edge/path lists retain full stable IDs. A label identifies an associated authorized Wiki title, not a guessed entity name or type.
+5. Clicking a node/edge performs a fresh traversal before opening its evidence drawer. Wiki links are reconstructed from pinned page and knowledge revision IDs. Evidence shows claim kind, validity, knowledge time, revision state, and immutable source/line references. Empty support remains an explicit evidence gap.
+
+## Authorization and concurrency
+
+- Every five seconds while visible, both seed and graph phases revalidate with `/traverse`, without model calls. Seed-phase refreshes retain only current authorized primary seed fragments; incidental graph fragments are not added to seed choices. A failed or empty initial search never silently retries a model call.
+- Passive checks coalesce an ongoing request, avoiding repeated cancellation of slow reads. New queries, space changes, explicit refresh, focus, and visibility return invalidate old responses. Focus immediately withdraws the diagram, retrieved titles/text, and raw-source drawer until authorization succeeds.
+- Every source read starts a fresh traversal, fetches the authenticated immutable source snapshot, validates the complete reference, source-space ID from canonical evidence, digest metadata, line bounds, and exact excerpt, then **starts a new traversal after the source response**. It does not reuse an earlier pending poll as its final check. Raw text is shown only if the same selection still maps to the same reference afterward.
+- Source identity includes snapshot ID, resource/source IDs, source revision, path, kind, and line range. Wiki space and original-source space can legitimately differ. Current source evidence is compared by full reference, validity interval, source space, excerpt, and digest. Abort and generation fences prevent late raw-source responses from restoring withdrawn content.
+- Malformed or inconsistent graph responses are rejected as a whole: node/edge budgets, relation allowlist, edge endpoints, path adjacency, and fragment/citation mappings are checked. Bounded two-hop cycles are valid. All rendering uses React text or the existing sanitized Markdown/source components.
+- Authorization/transport errors clear protected output. A valid degraded response can retain live-authorized seed evidence, but explicitly says that missing relationships do not prove absence of dependencies. Unknown diagnostic codes render a generic safe capability warning, never arbitrary server text.
+
+## Ownership and validation
+
+New modules are `graph-types.ts`, `graph-api.ts`, `graph-hooks.ts`, `graph.css`, `pages/GraphExplorer.tsx`, and `components/GraphCanvas.tsx` / `GraphEvidence.tsx`. Existing Spaces changes are limited to replacing its graph placeholder. Accepted Agent, Chat, channel, source, and Wiki behavior is unchanged.
+
+Behavior tests cover draft/executed-query separation, history/direction contracts, actual seed IDs, no implicit model calls, slow-request coalescing, fresh final checks, focus/visibility and route fences, source identity and cross-space support, final revocation, safe degradation, keyboard navigation, inference styling, malformed payloads, evidence gaps, and legitimate graph cycles. These are HTTP-contract/DOM tests; they are not a claim of a newly deployed browser-to-Neo4j acceptance run. Deployment and independent review are coordinated separately.

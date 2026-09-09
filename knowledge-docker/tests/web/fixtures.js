@@ -39,8 +39,7 @@ export async function login(page) {
     await page.locator('#password').fill(privateConfig.admin_password);
     await page.locator('#kc-login').click();
   } catch { throw new Error('Real Keycloak login form did not complete'); }
-  // A failed URL assertion can print the one-time OAuth callback code. Wait without echoing URLs.
-  await page.waitForFunction(() => location.pathname === '/chat' && location.search === '');
+  await expect(page).toHaveURL(/\/chat$/);
   await expect(page.getByRole('link', { name: '知识空间', exact: true })).toBeVisible();
 }
 

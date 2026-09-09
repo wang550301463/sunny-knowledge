@@ -17,7 +17,7 @@ test('real Wiki display records own usage once, preserves source age and withdra
   const proof = { runtime: 'real_browser_pkce_ingest_canonical_pg_s3_auth', checks: [] };
   const events = [];
   const observe = req => {
-    if (owned.page && decodeURIComponent(new URL(req.url()).pathname) === `/api/v1/pages/${owned.page.id}/access-events`)
+    if (owned.page && new URL(req.url()).pathname === `/api/v1/pages/${owned.page.id}/access-events`)
       events.push(req.postDataJSON());
   };
   page.on('request', observe);
@@ -29,13 +29,10 @@ test('real Wiki display records own usage once, preserves source age and withdra
     for (const action of ['read', 'write'])
       await api(page, 'PUT', '/grants', { space_id: owned.space.id, action, subjects: [owned.actor, 'service:' + workerID] });
     const marker = 'lifecycle-source-' + owned.suffix;
-    const sourceResponse = await request(page, 'POST', '/sources', {
+    owned.source = await api(page, 'POST', '/sources', {
       name: marker, kind: 'markdown', space_id: owned.space.id,
       config: { path: 'docs/lifecycle-browser.md', content: `# ${marker}\r\n访问只记录使用情况，不提高事实可信度。\r\n` },
-    });
-    proof.source_create = { status: sourceResponse.status, code: sourceResponse.data?.error?.code };
-    expect(sourceResponse.status, 'Actual source creation: ' + (proof.source_create.code ?? 'created')).toBe(201);
-    owned.source = sourceResponse.data;
+    }, 201);
     const preview = await api(page, 'POST', `/sources/${owned.source.id}/preview`, { base_version: 1 });
     expect(preview.file_count).toBe(1);
     let task = await api(page, 'POST', `/sources/${owned.source.id}/sync`, { base_version: 1 }, 202);
@@ -55,7 +52,7 @@ test('real Wiki display records own usage once, preserves source age and withdra
     expect(baseline.freshness.observed_at).toBeTruthy();
     expect(baseline.access.mine_visits_7d).toBe(0);
     expect(events).toHaveLength(0);
-    proof.checks.push('Real source preview, Temporal ingest, review-approved publication; direct GET does not record access');
+    proof.checks.push('Real source preview, Temporal ingest, human-reviewed publication; direct GET does not record access');
 
     const currentPath = `/pages/${owned.page.id}`;
     await page.goto(publicURL + currentPath);
@@ -89,7 +86,7 @@ test('real Wiki display records own usage once, preserves source age and withdra
     expect(events.at(-1).revision_id).toBe(revision.id);
     expect(events.at(-1).idempotency_key).not.toBe(first.idempotency_key);
     await page.getByRole('button', { name: /docs\/lifecycle-browser\.md/ }).first().click();
-    const citation = drawer(page, '原文引用');
+    const citation = drawer(page, '原始证据');
     await expect(citation).toBeVisible();
     await expect(citation.locator('.source-code')).toContainText('访问只记录使用情况，不提高事实可信度。');
     const snapshot = await api(page, 'GET', '/source-snapshots/' + reference.revision_id);

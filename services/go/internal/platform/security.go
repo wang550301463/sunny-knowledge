@@ -2,92 +2,32 @@ package platform
 
 import (
 	"context"
-	"crypto/ed25519"
-	"crypto/x509"
-	"encoding/json"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
-	"os"
 	"time"
 )
 
-type ServiceSecurity struct {
-	private ed25519.PrivateKey
-	public  map[string]ed25519.PublicKey
-}
+type ServiceSecurity struct{ secret []byte }
 type callerKey struct{}
 
-func NewServiceSecurity(private ed25519.PrivateKey, public map[string]ed25519.PublicKey) *ServiceSecurity {
-	return &ServiceSecurity{private: private, public: public}
-}
-func LoadServiceSecurity() (*ServiceSecurity, error) {
-	privateData, err := os.ReadFile(os.Getenv("SERVICE_PRIVATE_KEY_FILE"))
-	if err != nil {
-		return nil, errors.New("service private key unavailable")
-	}
-	block, _ := pem.Decode(privateData)
-	if block == nil {
-		return nil, errors.New("invalid private PEM")
-	}
-	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-	private, ok := key.(ed25519.PrivateKey)
-	if !ok {
-		return nil, errors.New("Ed25519 private key required")
-	}
-	publicData, err := os.ReadFile(os.Getenv("SERVICE_PUBLIC_KEYS_FILE"))
-	if err != nil {
-		return nil, errors.New("service public registry unavailable")
-	}
-	var registry map[string]string
-	if err = json.Unmarshal(publicData, &registry); err != nil {
-		return nil, err
-	}
-	public := map[string]ed25519.PublicKey{}
-	for id, value := range registry {
-		block, _ := pem.Decode([]byte(value))
-		if block == nil {
-			return nil, errors.New("invalid public PEM")
-		}
-		key, err := x509.ParsePKIXPublicKey(block.Bytes)
-		if err != nil {
-			return nil, err
-		}
-		ed, ok := key.(ed25519.PublicKey)
-		if !ok {
-			return nil, errors.New("Ed25519 public key required")
-		}
-		public[id] = ed
-	}
-	return NewServiceSecurity(private, public), nil
+func NewServiceSecurity(secret string) *ServiceSecurity {
+	return &ServiceSecurity{secret: []byte(secret)}
 }
 func (s *ServiceSecurity) Mint(caller, target string) (string, error) {
-	if len(s.private) != ed25519.PrivateKeySize || caller == "" || target == "" {
+	if len(s.secret) < 32 || caller == "" || target == "" {
 		return "", errors.New("invalid service signing configuration")
 	}
 	now := time.Now()
-	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.RegisteredClaims{Issuer: "knowledge-services", Subject: caller, Audience: []string{target}, IssuedAt: jwt.NewNumericDate(now), ExpiresAt: jwt.NewNumericDate(now.Add(60 * time.Second))})
-	token.Header["kid"] = caller
-	return token.SignedString(s.private)
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{Issuer: "knowledge-services", Subject: caller, Audience: []string{target}, IssuedAt: jwt.NewNumericDate(now), ExpiresAt: jwt.NewNumericDate(now.Add(60 * time.Second))}).SignedString(s.secret)
 }
 func (s *ServiceSecurity) Verify(token, target string) (string, error) {
-	if len(s.public) == 0 {
-		return "", errors.New("invalid service verification configuration")
+	if len(s.secret) < 32 {
+		return "", errors.New("invalid service signing configuration")
 	}
 	claims := new(jwt.RegisteredClaims)
-	_, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (any, error) {
-		kid, _ := t.Header["kid"].(string)
-		key, ok := s.public[kid]
-		if !ok || kid != claims.Subject {
-			return nil, errors.New("unknown or mismatched workload key")
-		}
-		return key, nil
-	}, jwt.WithValidMethods([]string{"EdDSA"}), jwt.WithIssuer("knowledge-services"), jwt.WithAudience(target), jwt.WithExpirationRequired(), jwt.WithIssuedAt())
+	_, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (any, error) { return s.secret, nil }, jwt.WithValidMethods([]string{"HS256"}), jwt.WithIssuer("knowledge-services"), jwt.WithAudience(target), jwt.WithExpirationRequired(), jwt.WithIssuedAt())
 	if err != nil {
 		return "", err
 	}

@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS channel_configs (
+ id text PRIMARY KEY,name text NOT NULL,bot_id text NOT NULL UNIQUE,agent_id text NOT NULL,space_ids text[] NOT NULL,
+ secret_cipher bytea NOT NULL,version bigint NOT NULL DEFAULT 1,enabled boolean NOT NULL DEFAULT false,
+ status text NOT NULL DEFAULT 'disabled',tested_version bigint NOT NULL DEFAULT 0,test_requested boolean NOT NULL DEFAULT false,
+ updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS channel_leases(channel_id text PRIMARY KEY REFERENCES channel_configs(id),owner text NOT NULL,fence bigint NOT NULL,until_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS channel_groups(id text PRIMARY KEY,channel_id text NOT NULL REFERENCES channel_configs(id),chat_id text NOT NULL,audience_id text NOT NULL,space_ids text[] NOT NULL,version bigint NOT NULL DEFAULT 1,enabled boolean NOT NULL,UNIQUE(channel_id,chat_id));
+CREATE TABLE IF NOT EXISTS channel_bindings(channel_id text NOT NULL REFERENCES channel_configs(id),external_user_id text NOT NULL,user_id text NOT NULL,version bigint NOT NULL DEFAULT 1,active boolean NOT NULL DEFAULT true,PRIMARY KEY(channel_id,external_user_id));
+CREATE UNIQUE INDEX IF NOT EXISTS channel_one_external_per_user ON channel_bindings(channel_id,user_id) WHERE active;
+CREATE TABLE IF NOT EXISTS channel_challenges(id text PRIMARY KEY,channel_id text NOT NULL REFERENCES channel_configs(id),external_user_id text NOT NULL,web_hash text NOT NULL,confirmation_hash text,user_id text,state text NOT NULL DEFAULT 'pending',expires_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS channel_sessions(channel_id text NOT NULL,external_user_id text NOT NULL,chat_type text NOT NULL,chat_id text NOT NULL,generation bigint NOT NULL DEFAULT 1,PRIMARY KEY(channel_id,external_user_id,chat_type,chat_id));
+CREATE TABLE IF NOT EXISTS channel_messages(channel_id text NOT NULL REFERENCES channel_configs(id),message_id text NOT NULL,request_id text NOT NULL,external_user_id text NOT NULL,chat_type text NOT NULL,chat_id text NOT NULL,question_cipher bytea NOT NULL,owner text NOT NULL,fence bigint NOT NULL,state text NOT NULL DEFAULT 'received',created_at timestamptz NOT NULL DEFAULT now(),run_id text NOT NULL DEFAULT '',PRIMARY KEY(channel_id,message_id));
+CREATE TABLE IF NOT EXISTS channel_contexts(id text PRIMARY KEY,channel_id text NOT NULL,message_id text NOT NULL,owner text NOT NULL,fence bigint NOT NULL,payload jsonb NOT NULL,expires_at timestamptz NOT NULL,FOREIGN KEY(channel_id,message_id) REFERENCES channel_messages(channel_id,message_id));
+CREATE TABLE IF NOT EXISTS channel_deliveries(id text PRIMARY KEY,channel_id text NOT NULL,message_id text NOT NULL,sequence bigint NOT NULL,content_hash text NOT NULL,finished boolean NOT NULL,state text NOT NULL DEFAULT 'pending',created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(channel_id,message_id,sequence),FOREIGN KEY(channel_id,message_id) REFERENCES channel_messages(channel_id,message_id));
+CREATE TABLE IF NOT EXISTS channel_audit(id bigserial PRIMARY KEY,actor text NOT NULL,action text NOT NULL,target text NOT NULL,created_at timestamptz NOT NULL DEFAULT now());

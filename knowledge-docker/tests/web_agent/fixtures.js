@@ -5,29 +5,6 @@ import { test, expect, login, publicURL, workerID } from '../web/fixtures.js';
 export { test, expect, publicURL };
 const artifactRoot = '/artifacts/web-agent';
 
-export function drawer(page, title) {
-  // AntD 5 Drawer renders the title in its panel but does not label the dialog.
-  return page.getByRole('dialog').filter({ has: page.locator('.ant-drawer-title').filter({ hasText: title }) });
-}
-
-export async function selectOption(page, control, label) {
-  // rc-select virtualizes options. Keyboard navigation scrolls the actual rendered
-  // list. Follow this combobox's active descendant, not another closing popup.
-  await control.press('ArrowDown');
-  for (let index = 0; index < 200; index++) {
-    const activeID = await control.getAttribute('aria-activedescendant');
-    if (activeID && /^[A-Za-z0-9_:-]+$/.test(activeID)) {
-      const option = page.locator(`[id="${activeID}"]`);
-      if (await option.count() && await option.getAttribute('aria-label') === label) {
-        await control.press('Enter');
-        return;
-      }
-    }
-    await control.press('ArrowDown');
-  }
-  throw new Error('The requested authorized option was not present in the loaded Select choices');
-}
-
 export function record(name, value) {
   mkdirSync(artifactRoot, { recursive: true });
   writeFileSync(`${artifactRoot}/${name}.json`, JSON.stringify(value, null, 2) + '\n');

@@ -20,7 +20,6 @@ services:
     command: [python, /fixture/seed.py]
     environment:
       PG_RESTORE_TEST_PASSWORD: ${PG_RESTORE_TEST_PASSWORD:?test-only password required}
-      PG_RESTORE_TEST_ENCRYPTION_KEY: ${PG_RESTORE_TEST_ENCRYPTION_KEY:?test-only key required}
       PYTHONPATH: /workspace/services/python/src
     networks: [restore]
     volumes:

@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS iam_schema_version (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS iam_epoch (id integer PRIMARY KEY CHECK(id=1),value bigint NOT NULL);
+INSERT INTO iam_epoch(id,value) VALUES(1,0) ON CONFLICT DO NOTHING;
+CREATE TABLE IF NOT EXISTS iam_users (id text PRIMARY KEY, name text NOT NULL, email text NOT NULL DEFAULT '', active boolean NOT NULL DEFAULT true, permissions text[] NOT NULL DEFAULT '{}', created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS iam_groups (id text PRIMARY KEY, name text NOT NULL, kind text NOT NULL CHECK(kind IN ('group','department')), created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS iam_memberships (group_id text REFERENCES iam_groups(id) ON DELETE CASCADE, user_id text REFERENCES iam_users(id) ON DELETE CASCADE, PRIMARY KEY(group_id,user_id));
+CREATE TABLE IF NOT EXISTS iam_spaces (id text PRIMARY KEY, name text NOT NULL, created_by text NOT NULL REFERENCES iam_users(id), created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS iam_resources (space_id text REFERENCES iam_spaces(id) ON DELETE CASCADE, id text NOT NULL, PRIMARY KEY(space_id,id));
+CREATE TABLE IF NOT EXISTS iam_policies (space_id text NOT NULL REFERENCES iam_spaces(id) ON DELETE CASCADE, resource_id text NOT NULL DEFAULT '', action text NOT NULL CHECK(action IN ('read','write','grant','review')), subjects text[], version bigint NOT NULL, PRIMARY KEY(space_id,resource_id,action), CHECK(resource_id<>'' OR subjects IS NOT NULL));
+CREATE TABLE IF NOT EXISTS iam_audit (id bigserial PRIMARY KEY, actor text NOT NULL, action text NOT NULL, target text NOT NULL, detail jsonb NOT NULL, auth_epoch bigint NOT NULL, occurred_at timestamptz NOT NULL DEFAULT now());
+INSERT INTO iam_schema_version(version) VALUES(1) ON CONFLICT DO NOTHING;

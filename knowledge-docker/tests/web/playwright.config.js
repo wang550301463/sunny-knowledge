@@ -7,7 +7,6 @@ export default defineConfig({
   reporter: [['list'], ['json', { outputFile: '/artifacts/browser-report.json' }]],
   use: {
     browserName: 'chromium', viewport: { width: 1440, height: 960 },
-    actionTimeout: 15_000, navigationTimeout: 30_000,
     // Credentials are supplied at runtime. Never record auth bodies or token storage.
     trace: 'off', video: 'off', screenshot: 'off',
   },

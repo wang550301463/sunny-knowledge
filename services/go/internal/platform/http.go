@@ -10,25 +10,25 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 )
 
 type Principal struct {
-	ID          string   `json:"id"`
-	Subjects    []string `json:"subjects"`
-	Permissions []string `json:"permissions"`
-	AuthEpoch   int64    `json:"auth_epoch"`
+	ID             string             `json:"id"`
+	Subjects       []string           `json:"subjects"`
+	Permissions    []string           `json:"permissions"`
+	AuthEpoch      int64              `json:"auth_epoch"`
+	ChannelContext *ChannelConstraint `json:"channel_context,omitempty"`
 }
 type Resolved struct {
 	Principal Principal `json:"principal"`
 	Scopes    []string  `json:"scopes"`
-	Audiences []string  `json:"audiences"`
-	Issuer    string    `json:"issuer"`
-	ClientID  string    `json:"client_id"`
-	ExpiresAt int64     `json:"expires_at"`
+	Issuer    string    `json:"issuer,omitempty"`
+	Audiences []string  `json:"audiences,omitempty"`
+	ClientID  string    `json:"client_id,omitempty"`
 	Delegated bool      `json:"delegated,omitempty"`
+	ExpiresAt int64     `json:"expires_at,omitempty"`
 }
 type Decision struct {
 	Allowed    bool   `json:"allowed"`
@@ -79,17 +79,7 @@ func ID() string {
 }
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := r.Header.Get("X-Request-ID")
-		if len(id) != 36 {
-			id = ID()
-		} else {
-			if _, err := hex.DecodeString(strings.ReplaceAll(id, "-", "")); err != nil {
-				id = ID()
-			}
-		}
-		r = r.WithContext(WithRequestID(r.Context(), id))
-		r.Header.Set("X-Request-ID", id)
-		w.Header().Set("X-Request-ID", id)
+		w.Header().Set("X-Request-ID", ID())
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		next.ServeHTTP(w, r)
 	})
@@ -125,9 +115,18 @@ func Env(name, fallback string) string {
 	return fallback
 }
 
-type requestIDKey struct{}
-
-func RequestID(ctx context.Context) string { v, _ := ctx.Value(requestIDKey{}).(string); return v }
-func WithRequestID(ctx context.Context, id string) context.Context {
-	return context.WithValue(ctx, requestIDKey{}, id)
+// ChannelConstraint is a second, conjunctive authority boundary. AudienceID is
+// never added to Subjects, and administrative permissions do not pass through it.
+type ChannelConstraint struct {
+	ContextID            string   `json:"context_id"`
+	ChannelID            string   `json:"channel_id"`
+	ConversationKey      string   `json:"conversation_key"`
+	AgentID              string   `json:"agent_id"`
+	AgentConfigurationID string   `json:"agent_configuration_id"`
+	SpaceIDs             []string `json:"space_ids"`
+	ChatType             string   `json:"chat_type"`
+	AudienceID           string   `json:"audience_id"`
+	GroupKey             string   `json:"group_key"`
+	MessageID            string   `json:"message_id"`
+	ReadRunID            string   `json:"read_run_id,omitempty"`
 }

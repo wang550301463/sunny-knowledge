@@ -1,0 +1,8 @@
+**
+!web
+!web/**
+web/node_modules
+web/dist
+!knowledge-docker
+!knowledge-docker/web
+!knowledge-docker/web/nginx.conf

@@ -2,7 +2,6 @@
 services:
   gateway-admission-regression:
     extends:
-      file: compose.yaml
       service: gateway
     profiles: [test]
     ports: !reset []
@@ -14,7 +13,6 @@ services:
     restart: 'no'
   gateway-unavailable-regression:
     extends:
-      file: compose.yaml
       service: gateway
     profiles: [test]
     ports: !reset []

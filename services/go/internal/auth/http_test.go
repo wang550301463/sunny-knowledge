@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"github.com/wang550301463/sunny-knowledge/services/go/internal/platform"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 )
@@ -29,4 +30,5 @@ func TestAuthHTTPRejectsPublicPrincipalAndUnsignedRequests(t *testing.T) {
 			t.Fatalf("status=%d want=%d body=%s", rr.Code, tc.want, rr.Body.String())
 		}
 	}
+	_ = http.MethodGet
 }

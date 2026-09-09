@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling==1.29.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sunny-knowledge-services"
+version = "2.0.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi==0.141.1", "uvicorn[standard]==0.52.4", "sqlalchemy[asyncio]==2.0.52",
+  "psycopg[binary,pool]==3.3.5", "pydantic-settings==2.15.0", "httpx==0.28.1",
+  "PyJWT[crypto]==2.13.0", "cryptography==50.0.1", "prometheus-client==0.26.0",
+  "opentelemetry-sdk==1.44.0", "opentelemetry-instrumentation-fastapi==0.65b0",
+  "opentelemetry-exporter-otlp-proto-http==1.44.0",
+  "temporalio==1.32.0", "boto3==1.43.89", "redis==8.1.0", "elasticsearch==9.5.0",
+  "tree-sitter==0.25.2", "tree-sitter-java==0.23.5", "tree-sitter-typescript==0.23.2", "tree-sitter-go==0.25.0"
+]
+
+[project.optional-dependencies]
+graph = ["graphiti-core==0.30.1"]
+mcp = ["mcp==2.2.0"]
+
+[dependency-groups]
+dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "ruff==0.16.6"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/knowledge_platform"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = ["integration: needs real Docker services"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

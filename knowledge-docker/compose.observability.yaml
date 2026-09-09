@@ -1,60 +1,33 @@
 services:
-  gateway:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  iam:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  auth:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  channel:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  channel-worker:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
   knowledge:
     environment:
       METRICS_PORT: '9090'
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.135.0
-    command:
-    - --config=/etc/otelcol/config.yaml
+    command: [--config=/etc/otelcol/config.yaml]
     volumes:
-    - ./observability/collector.yaml:/etc/otelcol/config.yaml:ro
+      - ./observability/collector.yaml:/etc/otelcol/config.yaml:ro
     mem_limit: 384m
     restart: unless-stopped
-    networks:
-    - backend
+    networks: [backend]
   tempo:
     image: grafana/tempo:2.8.2
-    command:
-    - -config.file=/etc/tempo.yaml
-    user: 0:0
+    command: [-config.file=/etc/tempo.yaml]
+    user: '0:0'
     volumes:
-    - ./observability/tempo.yaml:/etc/tempo.yaml:ro
-    - tempo-data:/var/tempo
+      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
     restart: unless-stopped
-    networks:
-    - backend
+    networks: [backend]
   prometheus:
     image: prom/prometheus:v3.5.0
-    command:
-    - --config.file=/etc/prometheus/prometheus.yml
-    - --storage.tsdb.retention.time=7d
+    command: [--config.file=/etc/prometheus/prometheus.yml, --storage.tsdb.retention.time=7d]
     volumes:
-    - ./observability/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
-    - prometheus-data:/prometheus
+      - ./observability/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
     restart: unless-stopped
-    networks:
-    - backend
+    networks: [backend]
   grafana:
     image: grafana/grafana:12.1.1
     environment:
@@ -65,55 +38,16 @@ services:
       GF_ANALYTICS_REPORTING_ENABLED: 'false'
       GF_ANALYTICS_CHECK_FOR_UPDATES: 'false'
       GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: 'false'
-      GF_PLUGINS_PREINSTALL_DISABLED: 'true'
     volumes:
-    - ./observability/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/knowledge.yaml:ro
-    - ./observability/grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/knowledge.yaml:ro
-    - ./observability/grafana/knowledge.json:/etc/grafana/knowledge-dashboards/knowledge.json:ro
-    - grafana-data:/var/lib/grafana
+      - ./observability/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/knowledge.yaml:ro
+      - ./observability/grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/knowledge.yaml:ro
+      - ./observability/grafana/knowledge.json:/etc/grafana/knowledge-dashboards/knowledge.json:ro
+      - grafana-data:/var/lib/grafana
     ports:
-    - 127.0.0.1:${GRAFANA_PORT:-13039}:3000
+      - 127.0.0.1:${GRAFANA_PORT:-13039}:3000
     restart: unless-stopped
-    networks:
-    - backend
-  ingest:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  llm:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  retrieval:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  graphiti:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  agent:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  mcp:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  ingest-worker:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  retrieval-worker:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-  graphiti-worker:
-    environment:
-      METRICS_PORT: '9090'
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-
+    networks: [backend]
 volumes:
-  tempo-data: null
-  prometheus-data: null
-  grafana-data: null
+  tempo-data:
+  prometheus-data:
+  grafana-data:

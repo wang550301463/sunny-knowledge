@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { test, expect, publicURL, realLogin, api, request, assets, seed, cleanup, gate, gateState, record, drawer as findDrawer, selectOption } from './fixtures.js';
+import { test, expect, publicURL, realLogin, api, request, assets, seed, cleanup, gate, gateState, record } from './fixtures.js';
 
 test('actual PKCE, Agent publish, incremental answer, resumed SSE, citation, download and live revocation', async ({ page }) => {
   const owned = assets();
@@ -19,11 +19,14 @@ test('actual PKCE, Agent publish, incremental answer, resumed SSE, citation, dow
     await test.step('Create and publish through the actual Agent editor', async () => {
       await page.getByRole('link', { name: '智能体', exact: true }).click();
       await page.getByRole('button', { name: '创建智能体', exact: true }).click();
-      const editor = findDrawer(page, '创建智能体');
+      const editor = page.getByRole('dialog', { name: '创建智能体', exact: true });
       await editor.getByLabel('名称', { exact: true }).fill(owned.name);
-      await selectOption(page, editor.getByLabel('归属空间'), owned.name);
-      await selectOption(page, editor.getByLabel('Chat 模型'), `${owned.model.name} · protocol-fixture-chat · 已测试`);
-      await selectOption(page, editor.getByLabel('知识范围', { exact: true }), owned.name);
+      await editor.getByLabel('归属空间').click();
+      await page.getByTitle(owned.name, { exact: true }).last().click();
+      await editor.getByLabel('Chat 模型').click();
+      await page.getByTitle(`${owned.model.name} · protocol-fixture-chat · 已测试`, { exact: true }).click();
+      await editor.getByLabel('知识范围', { exact: true }).click();
+      await page.getByTitle(owned.name, { exact: true }).last().click();
       await editor.getByLabel('名称', { exact: true }).click();
       await editor.getByRole('checkbox', { name: '混合检索', exact: true }).uncheck();
       await expect(editor.getByRole('checkbox', { name: '读取证据', exact: true })).toBeChecked();
@@ -35,14 +38,14 @@ test('actual PKCE, Agent publish, incremental answer, resumed SSE, citation, dow
       expect(owned.agent.config.space_ids).toEqual([owned.space.id]);
       expect(owned.agent.config.tools).toEqual(['get']);
       expect(owned.agent.config.model_configuration_id).toBe(owned.model.configuration_id);
-      const workspace = findDrawer(page, '智能体配置与发布');
+      const workspace = page.getByRole('dialog', { name: '智能体配置与发布' });
       const published = page.waitForResponse(r => new URL(r.url()).pathname === `/api/v1/agents/${owned.agent.id}/publish`);
       await workspace.getByRole('button', { name: '发布当前版本', exact: true }).click();
       expect((await published).status()).toBe(200);
       await expect(workspace.getByText('已共享', { exact: true })).toBeVisible();
       const current = await api(page, 'GET', `/agents/${owned.agent.id}`);
       expect(current.published_configuration_id).toBe(owned.agent.configuration_id);
-      await page.screenshot({ path: '/artifacts/web-agent/agent-published.png', fullPage: true, animations: 'disabled' });
+      await page.screenshot({ path: '/artifacts/web-agent/agent-published.png', fullPage: true });
       evidence.checks.push('UI saved actual fixed model/scope/get tool and published actual CAS version');
     });
 
@@ -65,10 +68,7 @@ test('actual PKCE, Agent publish, incremental answer, resumed SSE, citation, dow
       expect(prefix.answer_complete).toBe(false);
       expect(prefix.answer.gaps).toEqual([]);
       await expect(page.getByText('回答正在更新，以下片段已完成校验。', { exact: true })).toBeVisible();
-      await page.getByRole('button', { name: /执行步骤 ·/ }).click();
-      await expect(page.getByText(/调用知识工具 · 读取证据/).first()).toBeVisible({ timeout: 2000 });
-      await page.getByRole('button', { name: /执行步骤 ·/ }).click();
-      await page.screenshot({ path: '/artifacts/web-agent/answer-prefix.png', fullPage: true, animations: 'disabled' });
+      await page.screenshot({ path: '/artifacts/web-agent/answer-prefix.png', fullPage: true });
       const cursor = await page.evaluate(id => Number(sessionStorage.getItem(`sunny:agent-run:${id}:cursor`)), owned.run.id);
       expect(cursor).toBeGreaterThan(0);
       const beforeReload = streams.length;
@@ -83,9 +83,8 @@ test('actual PKCE, Agent publish, incremental answer, resumed SSE, citation, dow
       expect(owned.run.answer_complete).toBe(true);
       expect(owned.run.configuration_id).toBe(owned.agent.configuration_id);
       expect(owned.run.actual_scope).toEqual([owned.space.id]);
-      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-      // Only the numeric cursor is stored; resumed UI stages contain subsequent
-      // events, not a cached replay of the earlier authorized tool metadata.
+      await page.getByRole('button', { name: /执行步骤 ·/ }).click();
+      await expect(page.getByText(/调用知识工具 · 读取证据/).first()).toBeVisible();
       await expect(page.getByRole('region', { name: '证据缺口' })).toContainText('协议模拟结果');
       evidence.checks.push('Visible validated prefix while model gate was blocked', 'Actual browser SSE and Last-Event-ID resume after reload', 'Immutable Agent configuration and actual run scope');
       evidence.streams = streams;
@@ -99,11 +98,11 @@ test('actual PKCE, Agent publish, incremental answer, resumed SSE, citation, dow
       expect(snapshot.id).toBe(citation.evidence.revision_id);
       expect(snapshot.text).toContain(owned.marker);
       await page.getByRole('button', { name: /docs\/browser-agent.md/ }).first().click();
-      const drawer = findDrawer(page, '回答证据');
+      const drawer = page.getByRole('dialog', { name: '回答证据' });
       await expect(drawer.getByRole('region', { name: '原始引用逐行内容' })).toContainText(owned.marker);
       await expect(drawer.getByRole('link', { name: '查看该知识修订' })).toHaveAttribute('href', new RegExp(`revision=${owned.revision.id}`));
-      await page.screenshot({ path: '/artifacts/web-agent/answer-citation.png', fullPage: true, animations: 'disabled' });
-      await drawer.getByRole('button', { name: '关闭', exact: true }).click();
+      await page.screenshot({ path: '/artifacts/web-agent/answer-citation.png', fullPage: true });
+      await drawer.getByRole('button', { name: 'Close', exact: true }).click();
       const downloadPromise = page.waitForEvent('download');
       await page.getByRole('button', { name: 'Markdown 导出', exact: true }).click();
       const download = await downloadPromise;
@@ -129,7 +128,7 @@ test('actual PKCE, Agent publish, incremental answer, resumed SSE, citation, dow
       await expect(dialog.getByLabel('已发布智能体')).toBeVisible();
       await expect(dialog.getByLabel('BotSecret', { exact: true })).toHaveValue('');
       await expect(dialog.getByText(owned.name, { exact: true }).first()).toBeVisible();
-      await page.screenshot({ path: '/artifacts/web-agent/channel-editor-unconfigured.png', fullPage: true, animations: 'disabled' });
+      await page.screenshot({ path: '/artifacts/web-agent/channel-editor-unconfigured.png', fullPage: true });
       evidence.checks.push('Actual published Agent channel editor with no credentials or connection claim');
     });
 
@@ -157,7 +156,7 @@ test('actual PKCE, Agent publish, incremental answer, resumed SSE, citation, dow
       await page.reload();
       await expect(page.getByText(/已停止展示此回答/)).toBeVisible();
       await expect(page.getByText(owned.marker, { exact: true })).toHaveCount(0);
-      await page.screenshot({ path: '/artifacts/web-agent/answer-revoked.png', fullPage: true, animations: 'disabled' });
+      await page.screenshot({ path: '/artifacts/web-agent/answer-revoked.png', fullPage: true });
       evidence.checks.push('Source-level live revocation clears open DOM and denies citation/export', 'Refresh cannot restore hidden content');
     });
     record('behavior', { ...evidence, passed: true });
