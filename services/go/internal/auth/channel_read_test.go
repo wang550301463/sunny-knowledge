@@ -197,3 +197,47 @@ func TestChannelRunReadTokenRechecksBindingAudienceAndSourcePermissions(t *testi
 		t.Fatal("source read revocation bypassed", r.Code)
 	}
 }
+
+func TestChannelRunReadRejectsInvalidSignedClaimsAndMessageTokenConfusion(t *testing.T) {
+	f := newReadFixture(t)
+	token := f.readToken()
+	for _, tc := range []struct {
+		name   string
+		change func(*channelReadClaims)
+	}{
+		{"message issuer", func(c *channelReadClaims) { c.Issuer = delegationIssuer }},
+		{"message audience", func(c *channelReadClaims) { c.Audience = []string{delegationAudience} }},
+		{"extra audience", func(c *channelReadClaims) { c.Audience = append(c.Audience, "knowledge-api") }},
+		{"expired", func(c *channelReadClaims) { c.ExpiresAt = jwt.NewNumericDate(time.Now().Add(-time.Minute)) }},
+		{"future issued", func(c *channelReadClaims) { c.IssuedAt = jwt.NewNumericDate(time.Now().Add(time.Minute)) }},
+		{"unbounded lifetime", func(c *channelReadClaims) { c.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Hour)) }},
+		{"missing issued", func(c *channelReadClaims) { c.IssuedAt = nil }},
+		{"missing run", func(c *channelReadClaims) { c.RunID = "" }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			claims := new(channelReadClaims)
+			_, _, err := jwt.NewParser().ParseUnverified(strings.TrimPrefix(token, channelReadPrefix), claims)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tc.change(claims)
+			signed, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims).SignedString(f.broker.private)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if r := f.call("knowledge", "/internal/v1/resolve", channelReadPrefix+signed, `{}`); r.Code != 401 {
+				t.Fatalf("invalid claims accepted %d", r.Code)
+			}
+		})
+	}
+	if r := f.call("agent", "/internal/v1/resolve", delegationPrefix+strings.TrimPrefix(token, channelReadPrefix), `{}`); r.Code != 401 {
+		t.Fatal("read token became execution token", r.Code)
+	}
+	_, other, _ := ed25519.GenerateKey(rand.Reader)
+	claims := new(channelReadClaims)
+	jwt.NewParser().ParseUnverified(strings.TrimPrefix(token, channelReadPrefix), claims)
+	forged, _ := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims).SignedString(other)
+	if r := f.call("knowledge", "/internal/v1/resolve", channelReadPrefix+forged, `{}`); r.Code != 401 {
+		t.Fatal("wrong signer accepted", r.Code)
+	}
+}

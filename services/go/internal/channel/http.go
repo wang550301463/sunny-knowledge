@@ -182,50 +182,6 @@ func (h *Handler) groups(w http.ResponseWriter, r *http.Request) {
 	}
 	platform.JSON(w, 200, map[string]any{"items": v})
 }
-func (h *Handler) group(w http.ResponseWriter, r *http.Request) {
-	actor, ok := h.actor(w, r, true)
-	if !ok {
-		return
-	}
-	var in GroupInput
-	if !body(w, r, &in) {
-		return
-	}
-	id, chat := r.PathValue("id"), r.PathValue("chat")
-	in.RegistrationID = platform.ID()
-	if in.BaseVersion > 0 {
-		g, e := h.Store.GetGroup(r.Context(), id, chat)
-		if e != nil {
-			channelError(w, r, e)
-			return
-		}
-		if g.Version != in.BaseVersion {
-			channelError(w, r, ErrConflict)
-			return
-		}
-		in.RegistrationID = g.ID
-	}
-	if in.Enabled {
-		if !in.AcknowledgedPublicToGroup {
-			channelError(w, r, ErrDenied)
-			return
-		}
-		if h.Verifier == nil {
-			channelError(w, r, ErrUnavailable)
-			return
-		}
-		if e := h.Verifier.Audience(r.Context(), r.Header.Get("Authorization"), in.AudienceID, id, in.RegistrationID, in.SpaceIDs); e != nil {
-			channelError(w, r, e)
-			return
-		}
-	}
-	g, e := h.Store.SaveGroup(r.Context(), actor, id, chat, in)
-	if e != nil {
-		channelError(w, r, e)
-		return
-	}
-	platform.JSON(w, 200, g)
-}
 func (h *Handler) claim(w http.ResponseWriter, r *http.Request) {
 	actor, ok := h.actor(w, r, false)
 	if !ok {

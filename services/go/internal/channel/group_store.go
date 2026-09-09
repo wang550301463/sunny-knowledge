@@ -10,6 +10,17 @@ import (
 	"github.com/wang550301463/sunny-knowledge/services/go/internal/platform"
 )
 
+// AudienceSnapshot is the committed audience state as observed by the channel service.
+type AudienceSnapshot struct {
+	ID        string   `json:"id"`
+	ChannelID string   `json:"channel_id"`
+	GroupKey  string   `json:"group_key"`
+	SpaceIDs  []string `json:"space_ids"`
+	Active    bool     `json:"active"`
+	Version   int64    `json:"version"`
+	AuthEpoch int64    `json:"auth_epoch"`
+}
+
 const groupCols = "id,channel_id,chat_id,audience_id,space_ids,version,enabled,audience_version,desired_enabled,sync_state,sync_error,pending_operation_id"
 
 func scanGroup(row pgx.Row) (Group, error) {

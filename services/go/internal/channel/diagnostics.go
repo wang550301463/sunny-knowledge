@@ -58,8 +58,16 @@ func (s *Store) RecordRun(ctx context.Context, l Lease, id, run string) error {
 	if !key(run) {
 		return ErrInvalid
 	}
-	_, e := s.Pool.Exec(ctx, "UPDATE channel_messages SET run_id=$5 WHERE channel_id=$1 AND message_id=$2 AND owner=$3 AND fence=$4", l.ChannelID, id, l.Owner, l.Fence, run)
-	return e
+	return s.WithFence(ctx, l, func() error {
+		r, e := s.db(ctx).Exec(ctx, "UPDATE channel_messages SET run_id=$5 WHERE channel_id=$1 AND message_id=$2 AND owner=$3 AND fence=$4 AND (run_id='' OR run_id=$5)", l.ChannelID, id, l.Owner, l.Fence, run)
+		if e != nil {
+			return e
+		}
+		if r.RowsAffected() != 1 {
+			return ErrConflict
+		}
+		return nil
+	})
 }
 func (h *Handler) bindings(w http.ResponseWriter, r *http.Request) {
 	actor, ok := h.actor(w, r, false)

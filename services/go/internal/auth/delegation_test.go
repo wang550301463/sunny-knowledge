@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/wang550301463/sunny-knowledge/services/go/internal/platform"
 )
 
@@ -23,6 +24,7 @@ type delegationFixture struct {
 	audienceAllowed, actorAllowed bool
 	http                          http.Handler
 	security                      *platform.ServiceSecurity
+	broker                        *DelegationBroker
 }
 
 func newDelegationFixture(t *testing.T) *delegationFixture {
@@ -81,6 +83,7 @@ func newDelegationFixture(t *testing.T) *delegationFixture {
 	if err != nil {
 		t.Fatal(err)
 	}
+	f.broker = broker
 	f.http = NewHandler(NewVerifier("", "", ""), platform.NewClient("auth", f.security), iam.URL, f.security, WithDelegation(broker))
 	return f
 }
@@ -208,5 +211,72 @@ func TestPrivateChannelStillRequiresActorAndFrozenScope(t *testing.T) {
 	var d platform.Decision
 	if r.Code != 200 || json.Unmarshal(r.Body.Bytes(), &d) != nil || d.Allowed {
 		t.Fatal("private channel bypasses actor revocation")
+	}
+}
+
+func TestChannelDelegationRejectsInvalidSignedClaimsAndSignature(t *testing.T) {
+	f := newDelegationFixture(t)
+	valid := f.token()
+	for _, tc := range []struct {
+		name   string
+		mutate func(*delegationClaims)
+	}{
+		{"wrong issuer", func(c *delegationClaims) { c.Issuer = "knowledge-services" }},
+		{"wrong audience", func(c *delegationClaims) { c.Audience = []string{"knowledge-api"} }},
+		{"extra audience", func(c *delegationClaims) { c.Audience = append(c.Audience, "knowledge-api") }},
+		{"expired", func(c *delegationClaims) { c.ExpiresAt = jwt.NewNumericDate(time.Now().Add(-time.Minute)) }},
+		{"missing issued at", func(c *delegationClaims) { c.IssuedAt = nil }},
+		{"too long", func(c *delegationClaims) { c.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Hour)) }},
+		{"future issued at", func(c *delegationClaims) { c.IssuedAt = jwt.NewNumericDate(time.Now().Add(time.Minute)) }},
+		{"another context", func(c *delegationClaims) { c.ContextHash = strings.Repeat("0", 64) }},
+		{"another user", func(c *delegationClaims) { c.Subject = "admin" }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			claims := new(delegationClaims)
+			_, err := jwt.ParseWithClaims(strings.TrimPrefix(valid, delegationPrefix), claims, func(t *jwt.Token) (any, error) { return f.broker.private.Public(), nil })
+			if err != nil {
+				t.Fatal("could not validate fixture delegation")
+			}
+			tc.mutate(claims)
+			raw, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims).SignedString(f.broker.private)
+			if err != nil {
+				t.Fatal(err)
+			}
+			r := f.call("agent", "/internal/v1/resolve", delegationPrefix+raw, `{}`)
+			if r.Code != 401 && r.Code != 403 {
+				t.Fatalf("invalid delegation accepted: %d", r.Code)
+			}
+		})
+	}
+	parts := strings.Split(valid, ".")
+	parts[2] = strings.Repeat("a", len(parts[2]))
+	if r := f.call("agent", "/internal/v1/resolve", strings.Join(parts, "."), `{}`); r.Code != 401 {
+		t.Fatalf("invalid signature accepted: %d", r.Code)
+	}
+}
+
+func TestChannelExchangeRejectsMalformedOrExpandedContext(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		mutate func(*delegatedContext)
+	}{
+		{"scope escalation", func(c *delegatedContext) { c.Capabilities = append(c.Capabilities, "knowledge:write") }},
+		{"duplicate scope", func(c *delegatedContext) { c.SpaceIDs = []string{"s", "s"} }},
+		{"unbounded lifetime", func(c *delegatedContext) { c.ExpiresAt = time.Now().Add(time.Hour) }},
+		{"unbound user", func(c *delegatedContext) { c.UserID = "" }},
+		{"missing audience", func(c *delegatedContext) { c.AudienceID = "" }},
+		{"unknown kind", func(c *delegatedContext) { c.ChatType = "public" }},
+		{"missing configuration", func(c *delegatedContext) { c.AgentConfigurationID = "" }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newDelegationFixture(t)
+			f.mu.Lock()
+			tc.mutate(&f.context)
+			f.mu.Unlock()
+			r := f.call("channel", "/internal/v1/channel-token", "", `{"context_id":"context-1"}`)
+			if r.Code != 403 {
+				t.Fatalf("malformed context accepted: %d", r.Code)
+			}
+		})
 	}
 }

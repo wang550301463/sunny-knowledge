@@ -17,6 +17,8 @@ var schema string
 var ErrDenied = errors.New("access denied")
 var ErrInvalid = errors.New("invalid input")
 
+var errNoChange = errors.New("no change")
+
 type Store struct {
 	Pool      *pgxpool.Pool
 	Bootstrap string
@@ -36,6 +38,9 @@ type User struct {
 	Email       string   `json:"email"`
 	Active      bool     `json:"active"`
 	Permissions []string `json:"permissions"`
+	Kind        string   `json:"account_kind"`
+	ClientID    string   `json:"client_id"`
+	Version     int64    `json:"version"`
 }
 type Policy struct {
 	SpaceID              string   `json:"space_id"`
@@ -144,14 +149,17 @@ func requireAdmin(ctx context.Context, tx pgx.Tx, actor string) error {
 	}
 	return nil
 }
-func (s *Store) Ensure(ctx context.Context, id, name, email string) (platform.Principal, error) {
-	if !validID(id) || len(name) > 200 || len(email) > 320 {
+func (s *Store) Ensure(ctx context.Context, id, name, email string, verifiedClient ...string) (platform.Principal, error) {
+	if !validID(id) || len(name) > 200 || len(email) > 320 || len(verifiedClient) > 1 {
 		return platform.Principal{}, ErrInvalid
 	}
 	if name == "" {
 		name = id
 	}
-	// Existing accounts are never re-enabled and token claims never overwrite IAM permissions.
+	azp := ""
+	if len(verifiedClient) == 1 {
+		azp = verifiedClient[0]
+	}
 	var exists bool
 	if err := s.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM iam_users WHERE id=$1)", id).Scan(&exists); err != nil {
 		return platform.Principal{}, err
@@ -162,14 +170,33 @@ func (s *Store) Ensure(ctx context.Context, id, name, email string) (platform.Pr
 			if s.Bootstrap != "" && id == s.Bootstrap {
 				permissions = []string{"platform_admin"}
 			}
-			_, err := tx.Exec(ctx, "INSERT INTO iam_users(id,name,email,permissions) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING", id, name, email, permissions)
-			return err
+			result, err := tx.Exec(ctx, "INSERT INTO iam_users(id,name,email,permissions) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING", id, name, email, permissions)
+			if err != nil {
+				return err
+			}
+			if result.RowsAffected() == 0 {
+				return errNoChange
+			}
+			return nil
 		})
 		if err != nil {
 			return platform.Principal{}, err
 		}
 	}
-	return s.Principal(ctx, id)
+	var p platform.Principal
+	err := s.read(ctx, func(tx pgx.Tx) error {
+		var kind, client string
+		if err := tx.QueryRow(ctx, "SELECT account_kind,client_id FROM iam_users WHERE id=$1", id).Scan(&kind, &client); err != nil {
+			return err
+		}
+		if kind == "service" && (azp == "" || azp != client) {
+			return ErrDenied
+		}
+		var err error
+		p, err = principal(ctx, tx, id)
+		return err
+	})
+	return p, err
 }
 func (s *Store) Principal(ctx context.Context, id string) (p platform.Principal, err error) {
 	err = s.read(ctx, func(tx pgx.Tx) error { p, err = principal(ctx, tx, id); return err })
@@ -252,6 +279,39 @@ func (s *Store) RegisterResource(ctx context.Context, space, id string) error {
 	}
 	_, err := s.Pool.Exec(ctx, "INSERT INTO iam_resources(space_id,id) VALUES($1,$2) ON CONFLICT DO NOTHING", space, id)
 	return err
+}
+
+// RegisterSourceResource establishes an inherited ACL before source preview.
+// The actor is resolved by auth; authorization and registration share the mutation
+// transaction so revocation cannot race an earlier, separately committed check.
+func (s *Store) RegisterSourceResource(ctx context.Context, actor, space, id string) error {
+	if !validID(space) || !validID(id) || !strings.HasPrefix(id, "source:") || len(id) <= len("source:") {
+		return ErrInvalid
+	}
+	return s.mutate(ctx, actor, "source_resource.register", space+"/"+id, map[string]string{"space_id": space, "resource_id": id, "caller": "ingest"}, func(tx pgx.Tx, n int64) error {
+		var exists bool
+		if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM iam_resources WHERE space_id=$1 AND id=$2)", space, id).Scan(&exists); err != nil {
+			return err
+		}
+		resource := ""
+		if exists {
+			resource = id
+		}
+		for _, action := range []string{"read", "write"} {
+			decision, err := check(ctx, tx, actor, action, space, resource)
+			if err != nil {
+				return err
+			}
+			if !decision.Allowed {
+				return ErrDenied
+			}
+		}
+		if exists {
+			return errNoChange
+		}
+		_, err := tx.Exec(ctx, "INSERT INTO iam_resources(space_id,id) VALUES($1,$2)", space, id)
+		return err
+	})
 }
 func readSubjects(ctx context.Context, tx pgx.Tx, space, resource, action string) ([]string, int64, error) {
 	var subjects []string
@@ -360,4 +420,32 @@ func (s *Store) SetGrant(ctx context.Context, actor, space, resource, action str
 		_, err = tx.Exec(ctx, "INSERT INTO iam_policies(space_id,resource_id,action,subjects,version) VALUES($1,$2,$3,$4,$5) ON CONFLICT(space_id,resource_id,action) DO UPDATE SET subjects=excluded.subjects,version=excluded.version", space, resource, action, subjects, n)
 		return err
 	})
+}
+
+// AuthorizedGrants returns only policies from the same snapshot as the grant decision.
+func (s *Store) AuthorizedGrants(ctx context.Context, actor, space, resource string) (items []Grant, err error) {
+	items = []Grant{}
+	err = s.read(ctx, func(tx pgx.Tx) error {
+		decision, err := check(ctx, tx, actor, "grant", space, resource)
+		if err != nil {
+			return err
+		}
+		if !decision.Allowed {
+			return ErrDenied
+		}
+		rows, err := tx.Query(ctx, "SELECT space_id,resource_id,action,subjects,version FROM iam_policies WHERE space_id=$1 AND resource_id=$2 ORDER BY action", space, resource)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var grant Grant
+			if err := rows.Scan(&grant.SpaceID, &grant.ResourceID, &grant.Action, &grant.Subjects, &grant.Version); err != nil {
+				return err
+			}
+			items = append(items, grant)
+		}
+		return rows.Err()
+	})
+	return
 }

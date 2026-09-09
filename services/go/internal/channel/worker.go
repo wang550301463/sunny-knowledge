@@ -162,6 +162,7 @@ func (w *Worker) connection(parent context.Context, c Config, l Lease) error {
 	ticker := time.NewTicker(w.Options.LeaseTTL / 3)
 	defer ticker.Stop()
 	sem := make(chan struct{}, w.Options.MaxConcurrent)
+	control := make(chan struct{}, 2)
 	for {
 		select {
 		case <-ctx.Done():
@@ -189,10 +190,15 @@ func (w *Worker) connection(parent context.Context, c Config, l Lease) error {
 			if !fresh {
 				continue
 			}
+			capacity := sem
+			switch MessageCommand(m) {
+			case "/停止", "停止", "/stop", "/清空", "清空", "/clear":
+				capacity = control
+			}
 			select {
-			case sem <- struct{}{}:
+			case capacity <- struct{}{}:
 				jobs.Add(1)
-				go func() { defer jobs.Done(); defer func() { <-sem }(); w.handle(ctx, c, l, conn, m) }()
+				go func() { defer jobs.Done(); defer func() { <-capacity }(); w.handle(ctx, c, l, conn, m) }()
 			default:
 				w.Store.FinishMessage(ctx, l, m.ID, "busy", "")
 			}
@@ -231,7 +237,11 @@ func (w *Worker) handle(parent context.Context, c Config, l Lease, conn *Connect
 		if e != nil {
 			delivery = "delivery_unknown"
 			state = "delivery_unknown"
-			if errors.Is(e, ErrRejected) {
+			var unsent *UnsentError
+			if errors.As(e, &unsent) {
+				delivery = "not_sent"
+				state = "failed"
+			} else if errors.Is(e, ErrRejected) {
 				delivery = "rejected"
 				state = "failed"
 			}

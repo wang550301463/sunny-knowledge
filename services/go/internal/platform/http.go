@@ -118,6 +118,7 @@ func Env(name, fallback string) string {
 // ChannelConstraint is a second, conjunctive authority boundary. AudienceID is
 // never added to Subjects, and administrative permissions do not pass through it.
 type ChannelConstraint struct {
+	ReadRunID            string   `json:"read_run_id,omitempty"`
 	ContextID            string   `json:"context_id"`
 	ChannelID            string   `json:"channel_id"`
 	ConversationKey      string   `json:"conversation_key"`
@@ -128,5 +129,16 @@ type ChannelConstraint struct {
 	AudienceID           string   `json:"audience_id"`
 	GroupKey             string   `json:"group_key"`
 	MessageID            string   `json:"message_id"`
-	ReadRunID            string   `json:"read_run_id,omitempty"`
+}
+
+type requestIDKey struct{}
+
+func WithRequestID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, requestIDKey{}, id)
+}
+func RequestID(ctx context.Context) string {
+	if v, ok := ctx.Value(requestIDKey{}).(string); ok {
+		return v
+	}
+	return ""
 }

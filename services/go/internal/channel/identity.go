@@ -95,6 +95,9 @@ func (s *Store) Unbind(ctx context.Context, actor, channel, external string) err
 		return e
 	}
 	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, "SELECT 1 FROM channel_leases WHERE channel_id=$1 FOR UPDATE", channel); e != nil {
+		return e
+	}
 	r, e := tx.Exec(ctx, "UPDATE channel_bindings SET active=false,version=version+1 WHERE channel_id=$1 AND external_user_id=$2 AND user_id=$3 AND active", channel, external, actor)
 	if e != nil {
 		return e
@@ -195,15 +198,23 @@ func (s *Store) Introspect(ctx context.Context, id string) (RunContext, error) {
 	return v, nil
 }
 func (s *Store) ClearConversation(ctx context.Context, v RunContext) error {
+	tx, e := s.Pool.Begin(ctx)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, "SELECT 1 FROM channel_leases WHERE channel_id=$1 FOR UPDATE", v.ChannelID); e != nil {
+		return e
+	}
 	if _, e := s.Introspect(ctx, v.ID); e != nil {
 		return e
 	}
-	r, e := s.Pool.Exec(ctx, "UPDATE channel_sessions SET generation=generation+1 WHERE channel_id=$1 AND external_user_id=$2 AND chat_type=$3 AND chat_id=$4 AND generation=$5", v.ChannelID, v.ExternalUserID, v.ChatType, v.ChatID, v.Generation)
+	r, e := tx.Exec(ctx, "UPDATE channel_sessions SET generation=generation+1 WHERE channel_id=$1 AND external_user_id=$2 AND chat_type=$3 AND chat_id=$4 AND generation=$5", v.ChannelID, v.ExternalUserID, v.ChatType, v.ChatID, v.Generation)
 	if e != nil {
 		return e
 	}
 	if r.RowsAffected() != 1 {
 		return ErrConflict
 	}
-	return nil
+	return tx.Commit(ctx)
 }

@@ -16,7 +16,15 @@ func main() {
 		log.Fatal("KEYCLOAK_ISSUER and KEYCLOAK_AUDIENCE required")
 	}
 	verifier := auth.NewVerifier(os.Getenv("KEYCLOAK_ISSUER"), os.Getenv("KEYCLOAK_INTERNAL_URL"), os.Getenv("KEYCLOAK_AUDIENCE"))
-	handler := auth.NewHandler(verifier, platform.NewClient("auth", security), platform.Env("IAM_URL", "http://iam:8080"), security)
+	var options []func(*auth.Handler)
+	if path := os.Getenv("AUTH_CHANNEL_DELEGATION_KEY_FILE"); path != "" {
+		broker, err := auth.LoadDelegationBroker(path, platform.Env("CHANNEL_URL", "http://channel:8080"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		options = append(options, auth.WithDelegation(broker))
+	}
+	handler := auth.NewHandler(verifier, platform.NewClient("auth", security), platform.Env("IAM_URL", "http://iam:8080"), security, options...)
 	if err = platform.Serve(handler); err != nil {
 		log.Fatal(err)
 	}

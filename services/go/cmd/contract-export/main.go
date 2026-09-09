@@ -271,6 +271,216 @@ func parameters(path string) []any {
 	return result
 }
 
+func (r *registry) underlying(d declaration) declaration {
+	for n := 0; n < 20 && d.expression != nil; n++ {
+		if p, ok := d.expression.(*ast.StarExpr); ok {
+			d.expression = p.X
+			continue
+		}
+		if next, ok := r.types[r.name(d.pkg, d.expression)]; ok {
+			d = next
+			continue
+		}
+		break
+	}
+	return d
+}
+
+func (r *registry) expressionType(expression ast.Expr, pkg string, vars map[string]declaration) declaration {
+	switch x := expression.(type) {
+	case *ast.Ident:
+		if value, ok := vars[x.Name]; ok {
+			return value
+		}
+		if x.Name == "true" || x.Name == "false" {
+			return declaration{ast.NewIdent("bool"), pkg}
+		}
+	case *ast.BasicLit:
+		name := "string"
+		if x.Kind == token.INT {
+			name = "int"
+		}
+		if x.Kind == token.FLOAT {
+			name = "float64"
+		}
+		return declaration{ast.NewIdent(name), pkg}
+	case *ast.UnaryExpr:
+		return r.expressionType(x.X, pkg, vars)
+	case *ast.CompositeLit:
+		return declaration{x.Type, pkg}
+	case *ast.SelectorExpr:
+		base := r.underlying(r.expressionType(x.X, pkg, vars))
+		if object, ok := base.expression.(*ast.StructType); ok {
+			for _, field := range object.Fields.List {
+				for _, name := range field.Names {
+					if name.Name == x.Sel.Name {
+						return declaration{field.Type, base.pkg}
+					}
+				}
+			}
+		}
+	case *ast.CallExpr:
+		results := r.callResults(x, pkg, vars)
+		if len(results) > 0 {
+			return results[0]
+		}
+	}
+	return declaration{nil, pkg}
+}
+
+func (r *registry) callResults(call *ast.CallExpr, pkg string, vars map[string]declaration) []declaration {
+	key := ""
+	switch f := call.Fun.(type) {
+	case *ast.Ident:
+		key = pkg + "_" + f.Name
+		if f.Name == "append" && len(call.Args) > 0 {
+			return []declaration{r.expressionType(call.Args[0], pkg, vars)}
+		}
+	case *ast.SelectorExpr:
+		if id, ok := f.X.(*ast.Ident); ok {
+			key = id.Name + "_" + f.Sel.Name
+		}
+		d := r.expressionType(f.X, pkg, vars)
+		if d.expression != nil {
+			key = r.name(d.pkg, d.expression) + "_" + f.Sel.Name
+		}
+	}
+	fn, ok := r.functions[key]
+	if !ok || fn.node.Type.Results == nil {
+		return nil
+	}
+	values := []declaration{}
+	for _, field := range fn.node.Type.Results.List {
+		count := len(field.Names)
+		if count == 0 {
+			count = 1
+		}
+		for i := 0; i < count; i++ {
+			values = append(values, declaration{field.Type, fn.pkg})
+		}
+	}
+	return values
+}
+
+func (r *registry) expressionSchema(expression ast.Expr, pkg string, vars map[string]declaration) schema {
+	if composite, ok := expression.(*ast.CompositeLit); ok {
+		if _, ok := composite.Type.(*ast.MapType); ok {
+			properties := map[string]any{}
+			required := []string{}
+			for _, element := range composite.Elts {
+				pair, ok := element.(*ast.KeyValueExpr)
+				if !ok {
+					return schema{"x-unresolved-go-value": "map element"}
+				}
+				name, ok := evalString(pair.Key, map[string]string{})
+				if !ok {
+					return schema{"x-unresolved-go-value": "map key"}
+				}
+				properties[name] = r.expressionSchema(pair.Value, pkg, vars)
+				required = append(required, name)
+			}
+			sort.Strings(required)
+			return schema{"type": "object", "properties": properties, "required": required, "additionalProperties": false}
+		}
+	}
+	d := r.expressionType(expression, pkg, vars)
+	if d.expression == nil {
+		return schema{"x-unresolved-go-value": fmt.Sprintf("%T", expression)}
+	}
+	return r.shape(d.pkg, d.expression)
+}
+
+func (r *registry) containsUnresolved(value any, visited map[string]bool) bool {
+	switch v := value.(type) {
+	case map[string]any:
+		for key, child := range v {
+			if strings.HasPrefix(key, "x-unresolved-") {
+				return true
+			}
+			if key == "$ref" {
+				name := strings.TrimPrefix(child.(string), "#/components/schemas/")
+				if !visited[name] {
+					visited[name] = true
+					if r.containsUnresolved(r.schemas[name], visited) {
+						return true
+					}
+				}
+			} else if r.containsUnresolved(child, visited) {
+				return true
+			}
+		}
+	case []any:
+		for _, child := range v {
+			if r.containsUnresolved(child, visited) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (r *registry) outputs(pkg string, body *ast.BlockStmt) map[string]any {
+	vars := map[string]declaration{"h": {ast.NewIdent("Handler"), pkg}, "s": {ast.NewIdent("Store"), pkg}}
+	responses := map[string]any{}
+	if body == nil {
+		return responses
+	}
+	ast.Inspect(body, func(node ast.Node) bool {
+		switch x := node.(type) {
+		case *ast.TypeSpec:
+			// Handler-local structs are native wire declarations as well.
+			r.types[pkg+"_"+x.Name.Name] = declaration{x.Type, pkg}
+		case *ast.ValueSpec:
+			for _, name := range x.Names {
+				if x.Type != nil {
+					vars[name.Name] = declaration{x.Type, pkg}
+				}
+			}
+		case *ast.AssignStmt:
+			values := []declaration{}
+			if len(x.Rhs) == 1 {
+				if call, ok := x.Rhs[0].(*ast.CallExpr); ok {
+					values = r.callResults(call, pkg, vars)
+				}
+			}
+			if len(values) == 0 {
+				for _, rhs := range x.Rhs {
+					values = append(values, r.expressionType(rhs, pkg, vars))
+				}
+			}
+			for i, left := range x.Lhs {
+				if id, ok := left.(*ast.Ident); ok && i < len(values) && values[i].expression != nil {
+					vars[id.Name] = values[i]
+				}
+			}
+		case *ast.CallExpr:
+			f, ok := x.Fun.(*ast.SelectorExpr)
+			if !ok || f.Sel.Name != "JSON" || len(x.Args) != 3 {
+				break
+			}
+			status, ok := x.Args[1].(*ast.BasicLit)
+			if !ok {
+				break
+			}
+			code, e := strconv.Atoi(status.Value)
+			if e != nil || code < 200 || code >= 300 {
+				break
+			}
+			value := r.expressionSchema(x.Args[2], pkg, vars)
+			if old, ok := responses[status.Value]; ok {
+				a, _ := json.Marshal(old)
+				b, _ := json.Marshal(value)
+				if string(a) != string(b) {
+					value = schema{"anyOf": []any{old, value}}
+				}
+			}
+			responses[status.Value] = value
+		}
+		return true
+	})
+	return responses
+}
+
 func (r *registry) routes(pkg string) map[string]any {
 	paths := map[string]any{}
 	for _, file := range r.files[pkg] {
@@ -305,6 +515,22 @@ func (r *registry) routes(pkg string) map[string]any {
 				if input := requestType(body); input != nil {
 					operation["requestBody"] = schema{"required": true, "content": schema{"application/json": schema{"schema": r.shape(pkg, input)}}}
 					operation["x-request-validation"] = "Go JSON shape; imperative handler validation remains authoritative"
+				}
+				responses := r.outputs(pkg, body)
+				if len(responses) > 0 {
+					complete := true
+					success := schema{}
+					for status, value := range responses {
+						if r.containsUnresolved(value, map[string]bool{}) {
+							complete = false
+						}
+						success[status] = schema{"description": "Successful response derived from handler serialization", "content": schema{"application/json": schema{"schema": value}}}
+					}
+					operation["responses"] = success
+					if complete {
+						operation["x-response-typing"] = "typed"
+						delete(operation, "x-untyped-reason")
+					}
 				}
 				item, ok := paths[path].(map[string]any)
 				if !ok {

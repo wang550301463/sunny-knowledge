@@ -107,3 +107,59 @@ func TestAudienceRegistrationRequiresCurrentReadAndGrantAndIsIdempotent(t *testi
 		t.Fatalf("audience received write authority: %v", err)
 	}
 }
+
+func TestAudienceRevocationAndScopeChangesUseCASAndPreserveOtherGrants(t *testing.T) {
+	s := integrationStore(t)
+	ctx := context.Background()
+	for _, id := range []string{"admin", "alice"} {
+		if _, err := s.Ensure(ctx, id, id, ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	first, _ := s.CreateSpace(ctx, "admin", "First")
+	second, _ := s.CreateSpace(ctx, "admin", "Second")
+	for _, space := range []string{first.ID, second.ID} {
+		if err := s.SetGrant(ctx, "admin", space, "", "read", []string{"user:admin", "user:alice"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	a, err := s.CreateAudience(ctx, "admin", ChannelAudience{ID: "group-audience", ChannelID: "bot", GroupKey: "group", SpaceIDs: []string{first.ID}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, err := s.VerifyAudience(ctx, a.ID, a.ChannelID, a.GroupKey, []string{first.ID})
+	if err != nil || !v.Allowed || v.Version != a.Version {
+		t.Fatalf("active audience not verifiable: %+v %v", v, err)
+	}
+	next, err := s.UpdateAudience(ctx, "admin", a.ID, a.ChannelID, a.GroupKey, a.Version, []string{second.ID}, true)
+	if err != nil || next.Version != a.Version+1 {
+		t.Fatalf("scope update: %+v %v", next, err)
+	}
+	if _, err := s.UpdateAudience(ctx, "admin", a.ID, a.ChannelID, a.GroupKey, a.Version, []string{first.ID}, true); !errors.Is(err, ErrConflict) {
+		t.Fatalf("stale scope write: %v", err)
+	}
+	for _, tc := range []struct {
+		space   string
+		allowed bool
+	}{{first.ID, false}, {second.ID, true}} {
+		d, err := s.CheckChannel(ctx, "alice", a.ID, a.ChannelID, a.GroupKey, "read", tc.space, "")
+		if err != nil || d.Allowed != tc.allowed {
+			t.Fatalf("scope %s: %+v %v", tc.space, d, err)
+		}
+		personal, err := s.Check(ctx, "alice", "read", tc.space, "")
+		if err != nil || !personal.Allowed {
+			t.Fatalf("ordinary user grant changed: %+v %v", personal, err)
+		}
+	}
+	stopped, err := s.UpdateAudience(ctx, "admin", a.ID, a.ChannelID, a.GroupKey, next.Version, []string{second.ID}, false)
+	if err != nil || stopped.Active {
+		t.Fatalf("disable: %+v %v", stopped, err)
+	}
+	v, err = s.VerifyAudience(ctx, a.ID, a.ChannelID, a.GroupKey, []string{second.ID})
+	if err != nil || v.Allowed || v.AuthEpoch <= 0 {
+		t.Fatalf("disabled audience verified: %+v %v", v, err)
+	}
+	if err := s.SetGrant(ctx, "admin", second.ID, "", "read", []string{"audience:" + a.ID}); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("inactive audience grant accepted: %v", err)
+	}
+}

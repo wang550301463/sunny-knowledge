@@ -17,8 +17,8 @@ type Client struct {
 	HTTP     *http.Client
 }
 
-func NewClient(service, secret string) *Client {
-	return &Client{Service: service, Security: NewServiceSecurity(secret), HTTP: &http.Client{Timeout: 10 * time.Second}}
+func NewClient(service string, security *ServiceSecurity) *Client {
+	return &Client{Service: service, Security: security, HTTP: &http.Client{Transport: TraceTransport{}, Timeout: 10 * time.Second, CheckRedirect: func(req *http.Request, via []*http.Request) error { return http.ErrUseLastResponse }}}
 }
 func (c *Client) Call(ctx context.Context, target, base, method, path, bearer string, input, output any) error {
 	var body io.Reader

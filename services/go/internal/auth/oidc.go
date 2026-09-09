@@ -18,9 +18,10 @@ import (
 
 type UserToken struct {
 	jwt.RegisteredClaims
-	Scope string `json:"scope"`
-	Name  string `json:"preferred_username"`
-	Email string `json:"email"`
+	Scope           string `json:"scope"`
+	Name            string `json:"preferred_username"`
+	Email           string `json:"email"`
+	AuthorizedParty string `json:"azp"`
 }
 
 func (u UserToken) HasScope(scope string) bool {

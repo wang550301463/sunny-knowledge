@@ -106,12 +106,16 @@ func contains(values []string, value string) bool {
 }
 
 func (v delegatedContext) valid(now time.Time) bool {
+	return v.ExpiresAt.After(now) && !v.ExpiresAt.After(now.Add(180*time.Second)) && v.validIdentity()
+}
+
+func (v delegatedContext) validIdentity() bool {
 	for _, id := range []string{v.ID, v.UserID, v.ExternalUserID, v.ChannelID, v.ConversationKey, v.MessageID, v.AgentID, v.AgentConfigurationID} {
 		if !contextKey(id) {
 			return false
 		}
 	}
-	if v.ChannelVersion < 1 || v.BindingVersion < 1 || v.Generation < 1 || !v.ExpiresAt.After(now) || v.ExpiresAt.After(now.Add(180*time.Second)) || len(v.Capabilities) != 1 || v.Capabilities[0] != "knowledge:read" || len(v.SpaceIDs) < 1 || len(v.SpaceIDs) > 100 {
+	if v.ChannelVersion < 1 || v.BindingVersion < 1 || v.Generation < 1 || len(v.Capabilities) != 1 || v.Capabilities[0] != "knowledge:read" || len(v.SpaceIDs) < 1 || len(v.SpaceIDs) > 100 {
 		return false
 	}
 	seen := map[string]bool{}
@@ -272,9 +276,4 @@ func (h *Handler) delegatedIdentity(w http.ResponseWriter, r *http.Request) (pla
 		return platform.Resolved{}, false
 	}
 	return platform.Resolved{Principal: p, Scopes: []string{"knowledge:read"}, Issuer: delegationIssuer, Audiences: []string{delegationAudience}, ClientID: "knowledge-channel", ExpiresAt: claims.ExpiresAt.Unix(), Delegated: true}, true
-}
-
-// validIdentity reports whether the delegated context still names a bound identity.
-func (c delegatedContext) validIdentity() bool {
-	return c.UserID != "" && c.ExternalUserID != "" && c.ConversationKey != ""
 }

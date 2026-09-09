@@ -68,3 +68,10 @@ func (testVerifier) Agent(context.Context, string, string, []string) (string, er
 func (testVerifier) Audience(context.Context, string, string, string, string, []string) error {
 	return nil
 }
+func (testVerifier) ReadAudience(context.Context, string, string) (AudienceSnapshot, error) {
+	return AudienceSnapshot{}, nil
+}
+func (testVerifier) CreateAudience(context.Context, string, AudienceSnapshot) error { return nil }
+func (testVerifier) UpdateAudience(context.Context, string, AudienceSnapshot, int64) error {
+	return nil
+}

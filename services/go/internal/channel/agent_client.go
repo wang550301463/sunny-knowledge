@@ -171,6 +171,11 @@ func (c *HTTPAgentClient) read(ctx context.Context, bearer string, scope RunCont
 // Every captured claim must still be in the newly authorized result. New blocks
 // may be grouped into an earlier section, so byte-prefix comparison is incorrect.
 func preservesAnswer(old, current channelRunView) bool {
+	// Stop/failure can preserve earlier evidence. Its presence is not permission
+	// to send a queued "still running" frame after that operation has ended.
+	if !old.terminal() && current.terminal() && current.Status != "completed" {
+		return false
+	}
 	if old.terminal() && (current.Status != old.Status || *current.AnswerComplete != *old.AnswerComplete) {
 		return false
 	}

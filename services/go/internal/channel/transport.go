@@ -23,8 +23,7 @@ type Connection struct {
 	socket   *websocket.Conn
 	options  TransportOptions
 	fence    FenceWrite
-	writes   sync.Mutex
-	serial   sync.Mutex
+	serial   chan struct{}
 	mu       sync.Mutex
 	pending  map[string]chan Frame
 	messages chan []byte
@@ -63,7 +62,7 @@ func Dial(ctx context.Context, o TransportOptions, bot, secret string, fence Fen
 	if e != nil {
 		return nil, ErrUnavailable
 	}
-	c := &Connection{socket: ws, options: o, fence: fence, pending: map[string]chan Frame{}, messages: make(chan []byte, 64), done: make(chan struct{})}
+	c := &Connection{socket: ws, options: o, fence: fence, serial: make(chan struct{}, 1), pending: map[string]chan Frame{}, messages: make(chan []byte, 64), done: make(chan struct{})}
 	ws.SetReadLimit(1 << 20)
 	go c.read()
 	body, _ := json.Marshal(map[string]string{"bot_id": bot, "secret": secret})
@@ -131,31 +130,55 @@ func (c *Connection) read() {
 		}
 	}
 }
-func (c *Connection) write(ctx context.Context, f Frame) error {
+func (c *Connection) write(ctx context.Context, f Frame, guard func(context.Context) error) (attempted bool, err error) {
+	// Lease wait, live local/remote guard, socket write and fence commit share one
+	// bound. Remote guards must honor context and cannot mutate the held lease.
+	ctx, cancel := context.WithTimeout(ctx, c.options.WriteTimeout)
+	defer cancel()
 	fn := func() error {
-		c.writes.Lock()
-		defer c.writes.Unlock()
 		select {
 		case <-c.done:
 			return ErrUnavailable
 		default:
 		}
-		if e := c.socket.SetWriteDeadline(time.Now().Add(c.options.WriteTimeout)); e != nil {
+		// All waits that serialize this write have completed. No cached decision
+		// from before a mutex/lease wait may authorize the bytes below.
+		if guard != nil {
+			if e := guard(ctx); e != nil {
+				return e
+			}
+		}
+		if e := ctx.Err(); e != nil {
+			return e
+		}
+		deadline, _ := ctx.Deadline()
+		if e := c.socket.SetWriteDeadline(deadline); e != nil {
 			return ErrUnavailable
 		}
+		attempted = true
+		stop := context.AfterFunc(ctx, func() { c.stop(ErrDeliveryUnknown) })
+		defer stop()
 		return c.socket.WriteJSON(f)
 	}
 	if c.fence != nil {
-		return c.fence(ctx, fn)
+		err = c.fence(ctx, fn)
+	} else {
+		err = fn()
 	}
-	return fn()
+	return attempted, err
 }
 
 // Global serialization also prevents same-req-id stream ACK ambiguity. On timeout
 // the socket is closed so a late ACK cannot acknowledge any later cumulative frame.
 func (c *Connection) request(ctx context.Context, f Frame) error {
-	c.serial.Lock()
-	defer c.serial.Unlock()
+	select {
+	case c.serial <- struct{}{}:
+		defer func() { <-c.serial }()
+	case <-ctx.Done():
+		return &UnsentError{cause: ctx.Err()}
+	case <-c.done:
+		return &UnsentError{cause: c.Err()}
+	}
 	ch := make(chan Frame, 1)
 	c.mu.Lock()
 	c.pending[f.Headers.RequestID] = ch
@@ -163,12 +186,12 @@ func (c *Connection) request(ctx context.Context, f Frame) error {
 	defer func() { c.mu.Lock(); delete(c.pending, f.Headers.RequestID); c.mu.Unlock() }()
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return &UnsentError{cause: ctx.Err()}
 	case <-c.done:
-		return c.Err()
+		return &UnsentError{cause: c.Err()}
 	default:
 	}
-	if e := c.write(ctx, f); e != nil {
+	if _, e := c.write(ctx, f, nil); e != nil {
 		c.stop(e)
 		if e == ErrLeaseLost {
 			return e

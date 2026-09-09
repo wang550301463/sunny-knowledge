@@ -20,9 +20,16 @@ func NewHandler(s *Store, c *platform.Client, authURL string, sec *platform.Serv
 	internal.HandleFunc("POST /internal/v1/principals/ensure", h.ensure)
 	internal.HandleFunc("GET /internal/v1/principals/{sub}", h.principal)
 	internal.HandleFunc("POST /internal/v1/check", h.check)
+	internal.HandleFunc("POST /internal/v1/check-channel", h.checkChannel)
+	internal.HandleFunc("POST /internal/v1/channel-audiences", h.createAudience)
+	internal.HandleFunc("PUT /internal/v1/channel-audiences/{id}", h.updateAudience)
+	internal.HandleFunc("GET /internal/v1/channel-audiences/{id}", h.audienceSnapshot)
+	internal.HandleFunc("POST /internal/v1/channel-audiences/verify", h.verifyAudience)
+	internal.HandleFunc("POST /internal/v1/policies/batch", h.policyBatch)
 	internal.HandleFunc("GET /internal/v1/policies/{space}/{resource}", h.policy)
 	internal.HandleFunc("GET /internal/v1/policies/{space}", h.policy)
 	internal.HandleFunc("POST /internal/v1/resources", h.resource)
+	internal.HandleFunc("POST /internal/v1/source-resources", h.sourceResource)
 	public := http.NewServeMux()
 	public.HandleFunc("GET /api/v1/me", h.me)
 	public.HandleFunc("GET /api/v1/spaces", h.listSpaces)
@@ -164,6 +171,25 @@ func (h *Handler) resource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.Store.RegisterResource(r.Context(), in.SpaceID, in.ResourceID); err != nil {
+		storeError(w, r, err)
+		return
+	}
+	platform.JSON(w, 201, in)
+}
+
+func (h *Handler) sourceResource(w http.ResponseWriter, r *http.Request) {
+	if !caller(w, r, "ingest") {
+		return
+	}
+	var in platform.Resource
+	if !decode(w, r, &in) {
+		return
+	}
+	actor, ok := h.resolve(w, r)
+	if !ok {
+		return
+	}
+	if err := h.Store.RegisterSourceResource(r.Context(), actor.ID, in.SpaceID, in.ResourceID); err != nil {
 		storeError(w, r, err)
 		return
 	}

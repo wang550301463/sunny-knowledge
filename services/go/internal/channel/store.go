@@ -20,6 +20,28 @@ type Store struct {
 	Box  *SecretBox
 }
 
+// Transaction context is process-local and belongs to one exact Store. It is
+// never serialized into a bearer or forwarded to another service/database.
+type transactionKey struct{}
+type channelTransaction struct {
+	store *Store
+	tx    pgx.Tx
+}
+type channelDB interface {
+	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	QueryRow(context.Context, string, ...any) pgx.Row
+}
+
+func (s *Store) transactionContext(ctx context.Context, tx pgx.Tx) context.Context {
+	return context.WithValue(ctx, transactionKey{}, channelTransaction{s, tx})
+}
+func (s *Store) db(ctx context.Context) channelDB {
+	if bound, ok := ctx.Value(transactionKey{}).(channelTransaction); ok && bound.store == s {
+		return bound.tx
+	}
+	return s.Pool
+}
+
 func NewStore(p *pgxpool.Pool, b *SecretBox) *Store { return &Store{p, b} }
 func (s *Store) Migrate(ctx context.Context) error  { _, e := s.Pool.Exec(ctx, schema); return e }
 func mapped(e error) error {
@@ -157,6 +179,9 @@ func (s *Store) SaveGroup(ctx context.Context, actor, channel, chat string, in G
 		return Group{}, e
 	}
 	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, "SELECT 1 FROM channel_leases WHERE channel_id=$1 FOR UPDATE", channel); e != nil {
+		return Group{}, e
+	}
 	var spaces []string
 	if e = tx.QueryRow(ctx, "SELECT space_ids FROM channel_configs WHERE id=$1 FOR UPDATE", channel).Scan(&spaces); e != nil {
 		return Group{}, mapped(e)

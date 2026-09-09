@@ -31,6 +31,13 @@ var (
 const DefaultWebSocketURL = "wss://openws.work.weixin.qq.com"
 const MaxReplyBytes = 20480
 
+// UnsentError proves the WebSocket write was never attempted. It is distinct
+// from an uncertain network outcome, which must never be retried blindly.
+type UnsentError struct{ cause error }
+
+func (e *UnsentError) Error() string { return "channel frame was not sent" }
+func (e *UnsentError) Unwrap() error { return e.cause }
+
 type Config struct {
 	ID               string   `json:"id"`
 	Name             string   `json:"name"`
@@ -43,6 +50,8 @@ type Config struct {
 	TestedVersion    int64    `json:"tested_version"`
 	SecretConfigured bool     `json:"secret_configured"`
 	SecretCipher     []byte   `json:"-"`
+
+	AgentConfigurationID string `json:"agent_configuration_id"`
 }
 type ConfigInput struct {
 	BaseVersion int64    `json:"base_version"`
@@ -52,6 +61,8 @@ type ConfigInput struct {
 	AgentID     string   `json:"agent_id"`
 	SpaceIDs    []string `json:"space_ids"`
 	Enabled     bool     `json:"enabled"`
+
+	AgentConfigurationID string `json:"agent_configuration_id"`
 }
 
 func (v ConfigInput) validate() error {
@@ -80,41 +91,54 @@ func key(s string) bool {
 }
 
 type Group struct {
-	ChannelID  string   `json:"channel_id"`
-	ChatID     string   `json:"chat_id"`
-	AudienceID string   `json:"audience_id"`
-	SpaceIDs   []string `json:"space_ids"`
-	Version    int64    `json:"version"`
-	Enabled    bool     `json:"enabled"`
+	AudienceVersion    int64    `json:"audience_version"`
+	DesiredEnabled     bool     `json:"desired_enabled"`
+	SyncState          string   `json:"sync_state"`
+	SyncError          string   `json:"sync_error"`
+	PendingOperationID string   `json:"-"`
+	ID                 string   `json:"id"`
+	ChannelID          string   `json:"channel_id"`
+	ChatID             string   `json:"chat_id"`
+	AudienceID         string   `json:"audience_id"`
+	SpaceIDs           []string `json:"space_ids"`
+	Version            int64    `json:"version"`
+	Enabled            bool     `json:"enabled"`
 }
 type GroupInput struct {
-	BaseVersion int64    `json:"base_version"`
-	AudienceID  string   `json:"audience_id"`
-	SpaceIDs    []string `json:"space_ids"`
-	Enabled     bool     `json:"enabled"`
+	RegistrationID            string   `json:"-"`
+	AcknowledgedPublicToGroup bool     `json:"acknowledged_public_to_group"`
+	BaseVersion               int64    `json:"base_version"`
+	AudienceID                string   `json:"audience_id"`
+	SpaceIDs                  []string `json:"space_ids"`
+	Enabled                   bool     `json:"enabled"`
 }
 type RunContext struct {
-	ID              string    `json:"id"`
-	UserID          string    `json:"user_id"`
-	ExternalUserID  string    `json:"external_user_id"`
-	ChannelID       string    `json:"channel_id"`
-	ChannelVersion  int64     `json:"channel_version"`
-	BindingVersion  int64     `json:"binding_version"`
-	ConversationKey string    `json:"conversation_key"`
-	MessageID       string    `json:"message_id"`
-	AgentID         string    `json:"agent_id"`
-	SpaceIDs        []string  `json:"space_ids"`
-	ChatType        string    `json:"chat_type"`
-	ChatID          string    `json:"chat_id"`
-	AudienceID      string    `json:"audience_id"`
-	GroupVersion    int64     `json:"group_version"`
-	ExpiresAt       time.Time `json:"expires_at"`
+	ID                   string    `json:"id"`
+	UserID               string    `json:"user_id"`
+	ExternalUserID       string    `json:"external_user_id"`
+	ChannelID            string    `json:"channel_id"`
+	ChannelVersion       int64     `json:"channel_version"`
+	BindingVersion       int64     `json:"binding_version"`
+	ConversationKey      string    `json:"conversation_key"`
+	Generation           int64     `json:"generation"`
+	Capabilities         []string  `json:"capabilities"`
+	MessageID            string    `json:"message_id"`
+	AgentID              string    `json:"agent_id"`
+	AgentConfigurationID string    `json:"agent_configuration_id"`
+	SpaceIDs             []string  `json:"space_ids"`
+	ChatType             string    `json:"chat_type"`
+	ChatID               string    `json:"chat_id"`
+	AudienceID           string    `json:"audience_id"`
+	GroupKey             string    `json:"group_key"`
+	GroupVersion         int64     `json:"group_version"`
+	ExpiresAt            time.Time `json:"expires_at"`
 }
 type Update struct {
-	Content  string
-	Finished bool
-	RunID    string
-	URL      string
+	Content    string
+	Finished   bool
+	RunID      string
+	URL        string
+	BeforeSend func(context.Context) error
 }
 
 // AgentClient must exchange only the opaque context ID through the auth broker. It may
@@ -136,8 +160,11 @@ func (UnavailableAgent) Clear(context.Context, RunContext) error  { return ErrUn
 // ConfigurationVerifier checks the delegated caller, selected published Agent and
 // scope, and validates IAM's registered group audience. A nil verifier denies writes.
 type ConfigurationVerifier interface {
-	Agent(context.Context, string, string, []string) error
+	Agent(context.Context, string, string, []string) (string, error)
 	Audience(context.Context, string, string, string, string, []string) error
+	ReadAudience(context.Context, string, string) (AudienceSnapshot, error)
+	CreateAudience(context.Context, string, AudienceSnapshot) error
+	UpdateAudience(context.Context, string, AudienceSnapshot, int64) error
 }
 
 type SecretBox struct{ aead cipher.AEAD }
@@ -199,4 +226,15 @@ func BoundedReply(content, link string) string {
 func validWebURL(s string) bool {
 	u, e := url.Parse(s)
 	return e == nil && (u.Scheme == "https" || u.Scheme == "http") && u.Host != "" && u.User == nil && u.RawQuery == "" && u.Fragment == ""
+}
+
+// MessageCommand strips a group @-mention so command matching sees only the verb.
+func MessageCommand(m Message) string {
+	text := strings.TrimSpace(m.Text)
+	if m.ChatType == "group" && strings.HasPrefix(text, "@") {
+		if i := strings.IndexFunc(text, func(r rune) bool { return r == ' ' || r == '\t' || r == '\n' || r == '\u2005' || r == '\u00a0' }); i >= 0 {
+			return strings.TrimSpace(text[i:])
+		}
+	}
+	return text
 }

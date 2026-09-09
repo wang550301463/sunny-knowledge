@@ -15,6 +15,8 @@ import (
 type Config struct {
 	AuthURL, KeycloakURL, WebURL string
 	Routes                       map[string]string
+	Limiter                      Limiter
+	Limits                       RateLimits
 }
 
 var domains = map[string]string{"me": "iam", "spaces": "iam", "groups": "iam", "departments": "iam", "users": "iam", "grants": "iam", "audit": "iam", "pages": "knowledge", "reviews": "knowledge", "revisions": "knowledge", "sources": "ingest", "tasks": "ingest", "search": "retrieval", "traverse": "retrieval", "timeline": "retrieval", "models": "llm", "agents": "agent", "sessions": "agent", "runs": "agent", "feedback": "agent", "channels": "channel", "bindings": "channel"}
@@ -33,6 +35,9 @@ func stripHeaders(h http.Header) {
 	h.Del("X-Request-ID")
 }
 func NewHandler(config Config, security *platform.ServiceSecurity) (http.Handler, error) {
+	if config.Limiter != nil && !config.Limits.valid() {
+		return nil, errors.New("invalid rate limit configuration")
+	}
 	client := platform.NewClient("gateway", security)
 	proxies := map[string]*httputil.ReverseProxy{}
 	endpoints := map[string]string{}
@@ -61,7 +66,7 @@ func NewHandler(config Config, security *platform.ServiceSecurity) (http.Handler
 					p.Out.Header.Set("X-Service-Token", token)
 				}
 			}
-		}, Transport: &http.Transport{Proxy: http.ProxyFromEnvironment, DialContext: (&net.Dialer{Timeout: 5 * time.Second, KeepAlive: 30 * time.Second}).DialContext, ForceAttemptHTTP2: true, MaxIdleConns: 100, MaxIdleConnsPerHost: 20, IdleConnTimeout: 90 * time.Second, TLSHandshakeTimeout: 5 * time.Second, ResponseHeaderTimeout: 30 * time.Second}, FlushInterval: -1, ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+		}, Transport: platform.TraceTransport{Target: service, Base: &http.Transport{Proxy: http.ProxyFromEnvironment, DialContext: (&net.Dialer{Timeout: 5 * time.Second, KeepAlive: 30 * time.Second}).DialContext, ForceAttemptHTTP2: true, MaxIdleConns: 100, MaxIdleConnsPerHost: 20, IdleConnTimeout: 90 * time.Second, TLSHandshakeTimeout: 5 * time.Second, ResponseHeaderTimeout: 30 * time.Second}}, FlushInterval: -1, ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 			if r.Context().Err() == nil {
 				platform.Error(w, r, 502, "upstream_unavailable", "Service unavailable")
 			}
@@ -77,6 +82,14 @@ func NewHandler(config Config, security *platform.ServiceSecurity) (http.Handler
 			platform.JSON(w, 200, map[string]string{"status": "ok"})
 			return
 		}
+		if r.URL.Path == "/readyz" {
+			if config.Limiter == nil || config.Limiter.Ready(r.Context()) != nil {
+				platform.Error(w, r, 503, "rate_limit_unavailable", "Admission control unavailable")
+				return
+			}
+			platform.JSON(w, 200, map[string]string{"status": "ready"})
+			return
+		}
 		service := ""
 		authenticate := false
 		switch {
@@ -84,7 +97,8 @@ func NewHandler(config Config, security *platform.ServiceSecurity) (http.Handler
 			service = "keycloak"
 		case r.URL.Path == "/mcp" || strings.HasPrefix(r.URL.Path, "/mcp/"):
 			service = "mcp"
-			authenticate = true
+			// The MCP resource server validates its dedicated audience/client and
+			// constructs absolute metadata and tool-scope OAuth challenges itself.
 		case strings.HasPrefix(r.URL.Path, "/.well-known/"):
 			service = "mcp"
 		case strings.HasPrefix(r.URL.Path, "/api/"):
@@ -107,8 +121,9 @@ func NewHandler(config Config, security *platform.ServiceSecurity) (http.Handler
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 8<<20)
+		principalID := ""
 		if authenticate {
-			_, err := client.Resolve(ctx, config.AuthURL, r.Header.Get("Authorization"))
+			resolved, err := client.Resolve(ctx, config.AuthURL, r.Header.Get("Authorization"))
 			if err != nil {
 				status := 503
 				code := "authorization_unavailable"
@@ -122,6 +137,42 @@ func NewHandler(config Config, security *platform.ServiceSecurity) (http.Handler
 				}
 				platform.Error(w, r, status, code, "Valid active user authorization required")
 				return
+			}
+			principalID = resolved.Principal.ID
+		}
+		// Static web assets are served without admission control. Every dynamic
+		// route depends on the limiter, so a degraded limiter closes them instead
+		// of silently running unprotected.
+		if !(service == "web" && (r.URL.Path == "/assets" || strings.HasPrefix(r.URL.Path, "/assets/"))) {
+			if config.Limiter != nil && config.Limiter.Ready(ctx) != nil {
+				platform.Error(w, r, 503, "rate_limit_unavailable", "Admission control unavailable")
+				return
+			}
+			if config.Limiter != nil {
+				if class := rateClass(r.URL.Path); class != "" {
+					peer, peerErr := peerAddress(r)
+					if peerErr != nil {
+						platform.Error(w, r, 503, "rate_limit_unavailable", "Admission control unavailable")
+						return
+					}
+					switch class {
+					case "idp":
+						if !checkLimit(w, r, config.Limiter, "idp:"+peer, config.Limits.IdentityPeer) {
+							return
+						}
+					case "mcp":
+						if !checkLimit(w, r, config.Limiter, "mcp:"+peer, config.Limits.Peer) {
+							return
+						}
+					default:
+						if !checkLimit(w, r, config.Limiter, "peer:"+peer, config.Limits.Peer) {
+							return
+						}
+						if !checkLimit(w, r, config.Limiter, "principal:"+principalID, config.Limits.Principal) {
+							return
+						}
+					}
+				}
 			}
 		}
 		proxy.ServeHTTP(w, r)
