@@ -1,0 +1,12 @@
+import {render,screen,waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {ConfigProvider} from 'antd';
+import {vi,it,expect} from 'vitest';
+import {SourceForm,SourceActions} from '../pages/Sources';
+import type {SourceRecord} from '../types';
+import {BrowserRouter} from 'react-router-dom';
+const {api}=vi.hoisted(()=>({api:{get:vi.fn(),post:vi.fn(),patch:vi.fn()}}));
+vi.mock('../auth',()=>({useAuth:()=>({api})}));
+const source:SourceRecord={id:'source-id',resource_id:'source:source-id',space_id:'space-one',kind:'git',name:'Test repo',version:7,config:{url:'https://example.test/repo.git',ref:'refs/heads/main'},has_credential:true,state:'active',created_by:'user',created_at:'2026-09-08T00:00:00Z',updated_at:'2026-09-08T00:00:00Z',preview:null,latest_task_id:null};
+it('requires an actual successful preview before enabling source sync',()=>{render(<BrowserRouter><SourceActions source={source} onChanged={vi.fn()}/></BrowserRouter>);expect(screen.getByRole('button',{name:'启动同步'})).toBeDisabled();});
+it('preserves version CAS and never sends absent source credentials as null',async()=>{api.patch.mockResolvedValue(source);render(<ConfigProvider theme={{token:{motion:false}}}><SourceForm spaceId={source.space_id} source={source} onClose={vi.fn()} onSaved={vi.fn()}/></ConfigProvider>);await userEvent.setup().click(screen.getByRole('button',{name:'保存新版本'}));await waitFor(()=>expect(api.patch).toHaveBeenCalledWith('/sources/source-id',{base_version:7,name:'Test repo',config:source.config}));});

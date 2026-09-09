@@ -105,11 +105,12 @@ func (h *Handler) ensure(w http.ResponseWriter, r *http.Request) {
 		ID    string `json:"id"`
 		Name  string `json:"name"`
 		Email string `json:"email"`
+		AZP   string `json:"azp"`
 	}
 	if !decode(w, r, &in) {
 		return
 	}
-	p, err := h.Store.Ensure(r.Context(), in.ID, in.Name, in.Email)
+	p, err := h.Store.Ensure(r.Context(), in.ID, in.Name, in.Email, in.AZP)
 	if err != nil {
 		storeError(w, r, err)
 		return

@@ -1,5 +1,6 @@
 FROM node:20.20.2-bookworm-slim AS build
 WORKDIR /web
+RUN npm config set registry https://registry.npmmirror.com
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund
 COPY web/ ./

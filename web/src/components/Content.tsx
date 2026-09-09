@@ -1,0 +1,8 @@
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
+import { diffLines } from 'diff';
+export function SafeMarkdown({text}:{text:string}){return <article className="markdown"><ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]} skipHtml components={{img:({alt})=><span className="muted">[图片：{alt||'未加载'}]</span>,a:({href,children})=><a href={href} rel="noopener noreferrer" target="_blank">{children}</a>}}>{text}</ReactMarkdown></article>;}
+export function sourceRows(text:string){const rows=text.split('\n');if(text.endsWith('\n'))rows.pop();return rows;}
+export function ExactSource({text,startLine=1,endLine}:{text:string;startLine?:number;endLine?:number}){const rows=sourceRows(text);return <div className="source-code" role="region" aria-label="原始引用逐行内容" tabIndex={0}>{rows.slice(startLine-1,endLine??rows.length).map((line,index)=><div data-line={startLine+index} className="source-line" key={startLine+index}><span className="line-number" aria-hidden="true">{startLine+index}</span><code>{line||'\u200b'}</code></div>)}</div>;}
+export function ContentDiff({before,after}:{before:string;after:string}){return <div className="content-diff" aria-label="版本差异">{diffLines(before,after).map((part,index)=><pre key={index} className={part.added?'diff-added':part.removed?'diff-removed':'diff-unchanged'}><span aria-label={part.added?'新增':part.removed?'删除':'未变'}>{part.added?'+ ':part.removed?'− ':'  '}</span>{part.value}</pre>)}</div>;}

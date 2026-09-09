@@ -1,5 +1,6 @@
 FROM golang:1.24.7-alpine3.22 AS build
 WORKDIR /src
+ENV GOPROXY=https://goproxy.cn,direct
 RUN apk add --no-cache ca-certificates git
 COPY services/go/go.mod services/go/go.sum ./
 RUN go mod download

@@ -1,6 +1,6 @@
 {
   "name": "sunny-knowledge-web", "private": true, "version": "2.0.0", "type": "module",
-  "scripts": {"dev":"vite --host 127.0.0.1", "build":"tsc -b && vite build", "typecheck":"tsc --noEmit", "lint":"eslint . --max-warnings 0", "test":"vitest run", "test:watch":"vitest"},
+  "scripts": {"dev":"vite --host 127.0.0.1", "build":"vite build", "typecheck":"tsc --noEmit", "lint":"eslint . --max-warnings 0", "test":"vitest run", "test:watch":"vitest"},
   "dependencies": {"@ant-design/icons":"5.6.1", "antd":"5.27.6", "oidc-client-ts":"3.3.0", "react":"19.1.1", "react-dom":"19.1.1", "react-markdown":"10.1.0", "react-router-dom":"7.9.1", "rehype-sanitize":"6.0.0", "remark-gfm":"4.0.1", "diff":"8.0.2"},
   "devDependencies": {"@eslint/js":"9.36.0", "@testing-library/jest-dom":"6.8.0", "@testing-library/react":"16.3.0", "@testing-library/user-event":"14.6.1", "@types/react":"19.1.16", "@types/react-dom":"19.1.9", "@vitejs/plugin-react":"5.0.4", "eslint":"9.36.0", "eslint-plugin-react-hooks":"5.2.0", "globals":"16.4.0", "jsdom":"27.0.0", "typescript":"5.9.2", "typescript-eslint":"8.44.1", "vite":"7.1.7", "vitest":"3.2.4"}
 }

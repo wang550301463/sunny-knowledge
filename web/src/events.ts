@@ -1,0 +1,11 @@
+import { ApiClient, ApiError, pathId } from './api';
+export interface RunEvent { id:string; type:string; data:unknown }
+export async function readEventStream(stream:ReadableStream<Uint8Array>,onEvent:(event:RunEvent)=>void,signal?:AbortSignal,initialCursor=''):Promise<string>{
+  const reader=stream.getReader(),decoder=new TextDecoder();let buffer='',cursor=initialCursor;
+  const abort=()=>{void reader.cancel();};signal?.addEventListener('abort',abort,{once:true});
+  try {while(!signal?.aborted){const {done,value}=await reader.read();buffer+=decoder.decode(value,{stream:!done});buffer=buffer.replace(/\r\n/g,'\n');let end:number;while((end=buffer.indexOf('\n\n'))>=0){const block=buffer.slice(0,end);buffer=buffer.slice(end+2);let id='',type='message';const data:string[]=[];for(const line of block.split('\n')){if(line.startsWith('id:'))id=line.slice(3).trimStart();if(line.startsWith('event:'))type=line.slice(6).trimStart();if(line.startsWith('data:'))data.push(line.slice(5).trimStart());}if(data.length){if(id&&id===cursor)continue;const parsed:unknown=JSON.parse(data.join('\n'));onEvent({id,type,data:parsed});if(id)cursor=id;}}if(buffer.length>2_000_000)throw new ApiError(502,'event_too_large');if(done)break;}}
+  finally{signal?.removeEventListener('abort',abort);await reader.cancel().catch(()=>{});reader.releaseLock();}return cursor;
+}
+/** Cursor stays with the caller's authorized run view, never in localStorage. A retry must reauthorize. */
+export async function resumeRun(api:ApiClient,runId:string,cursor:string,onEvent:(event:RunEvent)=>void,signal:AbortSignal){const response=await api.response(`/runs/${pathId(runId)}/events`,{signal,headers:{Accept:'text/event-stream',...(cursor?{'Last-Event-ID':cursor}:{})}});if(!response.headers.get('content-type')?.includes('text/event-stream')||!response.body)throw new ApiError(502,'invalid_stream');return readEventStream(response.body,onEvent,signal,cursor);}
+export function cancelRun(api:ApiClient,runId:string){return api.post(`/runs/${pathId(runId)}/cancel`,{});}

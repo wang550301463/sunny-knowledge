@@ -14,6 +14,12 @@ import (
 
 //go:embed schema.sql
 var schema string
+
+//go:embed schema_v2.sql
+var schemaV2 string
+
+//go:embed schema_v3.sql
+var schemaV3 string
 var ErrDenied = errors.New("access denied")
 var ErrInvalid = errors.New("invalid input")
 
@@ -63,6 +69,12 @@ func (s *Store) Migrate(ctx context.Context) error {
 		return err
 	}
 	if _, err = tx.Exec(ctx, schema); err != nil {
+		return err
+	}
+	if _, err = tx.Exec(ctx, schemaV2); err != nil {
+		return err
+	}
+	if _, err = tx.Exec(ctx, schemaV3); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
