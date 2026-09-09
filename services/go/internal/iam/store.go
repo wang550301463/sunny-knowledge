@@ -92,11 +92,19 @@ func epoch(ctx context.Context, tx pgx.Tx) (int64, error) {
 	return n, err
 }
 func principal(ctx context.Context, tx pgx.Tx, id string) (platform.Principal, error) {
-	p := platform.Principal{ID: id, Subjects: []string{"user:" + id}, Permissions: []string{}}
+	p := platform.Principal{ID: id, Permissions: []string{}}
 	var active bool
-	if err := tx.QueryRow(ctx, "SELECT active,permissions FROM iam_users WHERE id=$1", id).Scan(&active, &p.Permissions); err != nil {
+	var accountKind string
+	if err := tx.QueryRow(ctx, "SELECT active,permissions,account_kind FROM iam_users WHERE id=$1", id).Scan(&active, &p.Permissions, &accountKind); err != nil {
 		return p, ErrDenied
 	}
+	// Service accounts carry the service: subject prefix; grants and worker
+	// authorization distinguish them from human users.
+	prefix := "user:"
+	if accountKind == "service" {
+		prefix = "service:"
+	}
+	p.Subjects = []string{prefix + id}
 	if !active {
 		return p, ErrDenied
 	}
@@ -171,6 +179,19 @@ func (s *Store) Ensure(ctx context.Context, id, name, email string, verifiedClie
 	azp := ""
 	if len(verifiedClient) == 1 {
 		azp = verifiedClient[0]
+	}
+	// Machine identity: a client_credentials token (non-empty azp) that is
+	// bound to a registered service account resolves to that account rather
+	// than the Keycloak-generated service user, so its subjects carry the
+	// service: prefix used by grants and worker authorization.
+	if azp != "" {
+		var boundID string
+		if err := s.Pool.QueryRow(ctx, "SELECT id FROM iam_users WHERE client_id=$1 AND account_kind='service' AND active AND deleted_at IS NULL", azp).Scan(&boundID); err == nil {
+			var bound platform.Principal
+			if err := s.read(ctx, func(tx pgx.Tx) error { bound, err = principal(ctx, tx, boundID); return err }); err == nil {
+				return bound, nil
+			}
+		}
 	}
 	var exists bool
 	if err := s.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM iam_users WHERE id=$1)", id).Scan(&exists); err != nil {
@@ -408,6 +429,8 @@ func (s *Store) SetGrant(ctx context.Context, actor, space, resource, action str
 			switch kind {
 			case "user":
 				err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM iam_users WHERE id=$1)", id).Scan(&exists)
+			case "service":
+				err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM iam_users WHERE id=$1 AND account_kind='service')", id).Scan(&exists)
 			case "group", "department":
 				err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM iam_groups WHERE id=$1 AND kind=$2)", id, kind).Scan(&exists)
 			default:
