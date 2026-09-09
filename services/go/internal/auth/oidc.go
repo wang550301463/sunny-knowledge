@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/wang550301463/sunny-knowledge/services/go/internal/platform"
 )
 
 type UserToken struct {
@@ -33,19 +35,27 @@ func (u UserToken) HasScope(scope string) bool {
 	return false
 }
 
+const (
+	keyCacheTTL     = 5 * time.Minute
+	refreshCooldown = time.Second
+)
+
 type Verifier struct {
 	Issuer, InternalURL, Audience string
 	HTTP                          *http.Client
 	mu                            sync.Mutex
 	keys                          map[string]*rsa.PublicKey
 	loaded                        time.Time
+	refreshing                    bool
+	lastAttempt                   time.Time
+	refreshDone                   chan struct{}
 }
 
 func NewVerifier(issuer, internal, audience string) *Verifier {
 	if internal == "" {
 		internal = issuer
 	}
-	return &Verifier{Issuer: strings.TrimRight(issuer, "/"), InternalURL: strings.TrimRight(internal, "/"), Audience: audience, HTTP: &http.Client{Timeout: 5 * time.Second}, keys: map[string]*rsa.PublicKey{}}
+	return &Verifier{Issuer: strings.TrimRight(issuer, "/"), InternalURL: strings.TrimRight(internal, "/"), Audience: audience, HTTP: &http.Client{Timeout: 5 * time.Second, Transport: platform.TraceTransport{}}, keys: map[string]*rsa.PublicKey{}}
 }
 func (v *Verifier) fetch(ctx context.Context, endpoint string, out any) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
@@ -106,24 +116,53 @@ func (v *Verifier) refresh(ctx context.Context) error {
 	if len(keys) == 0 {
 		return errors.New("no usable signing keys")
 	}
+	v.mu.Lock()
 	v.keys = keys
 	v.loaded = time.Now()
+	v.mu.Unlock()
 	return nil
 }
+
+// key resolves a signing key. Cached hits never block behind provider I/O:
+// the refresh fetch runs outside the mutex, concurrent refreshes collapse
+// into a single flight, a short cooldown bounds unknown-kid retry pressure,
+// and waiters honour their own context while a refresh is in flight.
 func (v *Verifier) key(ctx context.Context, kid string) (*rsa.PublicKey, error) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	key, exists := v.keys[kid]
-	if !exists || time.Since(v.loaded) > 5*time.Minute {
-		if err := v.refresh(ctx); err != nil {
+	for {
+		v.mu.Lock()
+		if key, ok := v.keys[kid]; ok && time.Since(v.loaded) <= keyCacheTTL {
+			v.mu.Unlock()
+			return key, nil
+		}
+		if v.refreshing {
+			done := v.refreshDone
+			v.mu.Unlock()
+			select {
+			case <-done:
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+			continue
+		}
+		if time.Since(v.lastAttempt) < refreshCooldown {
+			v.mu.Unlock()
+			return nil, errors.New("unknown signing key")
+		}
+		v.refreshing = true
+		v.lastAttempt = time.Now()
+		v.refreshDone = make(chan struct{})
+		v.mu.Unlock()
+		// The fetch outlives any single waiter's cancellation; other waiters
+		// still need the outcome, so detach it from this caller's context.
+		err := v.refresh(context.WithoutCancel(ctx))
+		v.mu.Lock()
+		v.refreshing = false
+		close(v.refreshDone)
+		v.mu.Unlock()
+		if err != nil {
 			return nil, err
 		}
-		key, exists = v.keys[kid]
 	}
-	if !exists {
-		return nil, errors.New("unknown signing key")
-	}
-	return key, nil
 }
 func (v *Verifier) Verify(ctx context.Context, bearer string) (claims UserToken, err error) {
 	if v.Issuer == "" || v.Audience == "" {

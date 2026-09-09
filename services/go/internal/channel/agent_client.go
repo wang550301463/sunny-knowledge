@@ -379,13 +379,22 @@ func (c *HTTPAgentClient) stream(ctx context.Context, bearer, run string, cursor
 			}
 			frames++
 			seq, err := strconv.ParseInt(id, 10, 64)
-			var event struct {
-				Seq  int64  `json:"seq"`
-				Type string `json:"type"`
-			}
-			if frames > 5000 || err != nil || seq <= 0 || kind == "" || json.Unmarshal([]byte(data.String()), &event) != nil || event.Seq != seq || event.Type != kind {
+			if frames > 5000 || err != nil || seq <= 0 {
 				return false, ErrUnavailable
 			}
+			if kind != "" || data.Len() > 0 {
+				// Typed events carry a mirrored seq/type payload that must
+				// match the frame fields; anything else is malformed.
+				var event struct {
+					Seq  int64  `json:"seq"`
+					Type string `json:"type"`
+				}
+				if kind == "" || json.Unmarshal([]byte(data.String()), &event) != nil || event.Seq != seq || event.Type != kind {
+					return false, ErrUnavailable
+				}
+			}
+			// A bare id frame is a cursor advance: the payload stays untrusted
+			// and unread, the run view is re-fetched instead.
 			if seq > *cursor {
 				done, err := refresh()
 				if err != nil || done {

@@ -419,6 +419,43 @@ func (r *registry) containsUnresolved(value any, visited map[string]bool) bool {
 	return false
 }
 
+// elementType resolves the element type produced by a range expression:
+// the slice/map value for two-variable forms. Named types are dereferenced
+// through the registry; anything unresolvable yields a nil declaration so
+// callers keep the loop variable explicitly unresolved.
+func (r *registry) elementType(expression ast.Expr, pkg string, vars map[string]declaration) declaration {
+	d := r.expressionType(expression, pkg, vars)
+	for n := 0; n < 20; n++ {
+		switch t := d.expression.(type) {
+		case *ast.ArrayType:
+			return declaration{t.Elt, d.pkg}
+		case *ast.MapType:
+			return declaration{t.Value, d.pkg}
+		case *ast.StarExpr:
+			d = declaration{t.X, d.pkg}
+		case *ast.Ident:
+			next, ok := r.types[r.name(d.pkg, t)]
+			if !ok {
+				return declaration{nil, d.pkg}
+			}
+			d = next
+		default:
+			return declaration{nil, d.pkg}
+		}
+	}
+	return declaration{nil, d.pkg}
+}
+
+// indexType resolves the key/position produced by the one-variable range
+// form: the map key type, or int for slices and arrays.
+func (r *registry) indexType(expression ast.Expr, pkg string, vars map[string]declaration) declaration {
+	d := r.underlying(r.expressionType(expression, pkg, vars))
+	if t, ok := d.expression.(*ast.MapType); ok {
+		return declaration{t.Key, d.pkg}
+	}
+	return declaration{ast.NewIdent("int"), pkg}
+}
+
 func (r *registry) outputs(pkg string, body *ast.BlockStmt) map[string]any {
 	vars := map[string]declaration{"h": {ast.NewIdent("Handler"), pkg}, "s": {ast.NewIdent("Store"), pkg}}
 	responses := map[string]any{}
@@ -434,6 +471,21 @@ func (r *registry) outputs(pkg string, body *ast.BlockStmt) map[string]any {
 			for _, name := range x.Names {
 				if x.Type != nil {
 					vars[name.Name] = declaration{x.Type, pkg}
+				}
+			}
+		case *ast.RangeStmt:
+			// Loop variables shadow any earlier binding of the same name,
+			// including the preseeded receiver declarations below.
+			if id, ok := x.Value.(*ast.Ident); ok && id.Name != "_" {
+				vars[id.Name] = r.elementType(x.X, pkg, vars)
+			} else if x.Value == nil {
+				if id, ok := x.Key.(*ast.Ident); ok && id.Name != "_" {
+					vars[id.Name] = r.indexType(x.X, pkg, vars)
+				}
+			}
+			if id, ok := x.Key.(*ast.Ident); ok && id.Name != "_" && x.Value != nil {
+				if key := r.indexType(x.X, pkg, vars); key.expression != nil {
+					vars[id.Name] = key
 				}
 			}
 		case *ast.AssignStmt:
