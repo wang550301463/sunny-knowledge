@@ -1,0 +1,1 @@
+"""Durable, evidence-constrained agents. No direct knowledge publication capability."""

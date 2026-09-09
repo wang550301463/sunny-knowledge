@@ -127,3 +127,26 @@ class TelemetryMiddleware:
                 labels = (self.telemetry.service, method, route, str(status))
                 self.telemetry.requests.labels(*labels).inc()
                 self.telemetry.duration.labels(*labels).observe(time.monotonic() - started)
+
+
+def install_telemetry(app, config) -> Telemetry:
+    """Install tracing middleware and the optional OTLP/metrics stack on an app.
+
+    Reconstructed during the 2026-09-09 recovery: the original body was lost
+    with the disk wipe. The contract is taken from the call sites (every
+    service's create_app): service name comes from config, the OTLP endpoint
+    from the standard OTEL_EXPORTER_OTLP_ENDPOINT variable, and a metrics
+    listener only when KNOWLEDGE_METRICS_PORT is set.
+    """
+    import os
+
+    service = getattr(config, "service_name", "") or "knowledge"
+    telemetry = Telemetry(service, otlp_endpoint=os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", ""))
+    telemetry.instrument(app)
+    try:
+        port = int(os.environ.get("KNOWLEDGE_METRICS_PORT", "0") or 0)
+    except ValueError:
+        port = 0
+    telemetry.start(metrics_port=port)
+    app.state.telemetry = telemetry
+    return telemetry

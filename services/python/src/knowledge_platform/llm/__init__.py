@@ -1,0 +1,1 @@
+"""Versioned model configuration and bounded provider inference."""
