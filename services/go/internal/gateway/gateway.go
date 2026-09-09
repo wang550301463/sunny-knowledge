@@ -19,7 +19,7 @@ type Config struct {
 	Limits                       RateLimits
 }
 
-var domains = map[string]string{"me": "iam", "spaces": "iam", "groups": "iam", "departments": "iam", "users": "iam", "grants": "iam", "audit": "iam", "pages": "knowledge", "reviews": "knowledge", "revisions": "knowledge", "sources": "ingest", "tasks": "ingest", "search": "retrieval", "traverse": "retrieval", "timeline": "retrieval", "models": "llm", "agents": "agent", "sessions": "agent", "runs": "agent", "feedback": "agent", "channels": "channel", "bindings": "channel"}
+var domains = map[string]string{"me": "iam", "spaces": "iam", "groups": "iam", "departments": "iam", "users": "iam", "grants": "iam", "audit": "iam", "pages": "knowledge", "reviews": "knowledge", "revisions": "knowledge", "sources": "ingest", "tasks": "ingest", "search": "retrieval", "traverse": "retrieval", "timeline": "retrieval", "models": "llm", "agents": "agent", "sessions": "agent", "runs": "agent", "feedback": "agent", "channels": "channel", "channel-bindings": "channel", "bindings": "channel", "service-accounts": "iam"}
 
 func stripHeaders(h http.Header) {
 	for name := range h {

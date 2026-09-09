@@ -37,6 +37,7 @@ func NewHandler(s *Store, c *platform.Client, auth string, sec *platform.Service
 	routes.HandleFunc("POST /api/v1/channels/{id}/test", h.test)
 	routes.HandleFunc("GET /api/v1/channels/{id}/groups", h.groups)
 	routes.HandleFunc("PUT /api/v1/channels/{id}/groups/{chat}", h.group)
+	routes.HandleFunc("GET /api/v1/channel-bindings", h.bindings)
 	routes.HandleFunc("POST /api/v1/channel-bindings/claim", h.claim)
 	routes.HandleFunc("DELETE /api/v1/channels/{id}/bindings/{external}", h.unbind)
 	secured := sec.Middleware("channel", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

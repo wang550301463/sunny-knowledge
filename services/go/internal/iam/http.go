@@ -47,6 +47,12 @@ func NewHandler(s *Store, c *platform.Client, authURL string, sec *platform.Serv
 	public.HandleFunc("GET /api/v1/grants", h.getGrants)
 	public.HandleFunc("PUT /api/v1/grants", h.grant)
 	public.HandleFunc("GET /api/v1/audit", h.audit)
+	public.HandleFunc("POST /api/v1/users", h.createUser)
+	public.HandleFunc("GET /api/v1/service-accounts", h.listServiceAccounts)
+	public.HandleFunc("POST /api/v1/service-accounts", h.createServiceAccount)
+	public.HandleFunc("GET /api/v1/service-accounts/{id}", h.getServiceAccount)
+	public.HandleFunc("PUT /api/v1/service-accounts/{id}", h.updateServiceAccount)
+	public.HandleFunc("DELETE /api/v1/service-accounts/{id}", h.deleteServiceAccount)
 	secured := http.NewServeMux()
 	secured.Handle("/internal/", internal)
 	secured.Handle("/api/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
