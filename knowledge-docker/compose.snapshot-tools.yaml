@@ -1,0 +1,20 @@
+# Operator-selected immutable raw-store copy. No database or Docker socket access.
+services:
+  snapshot-store:
+    image: sunny-knowledge/regression:v2-local
+    profiles: [operations]
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    entrypoint: [python, /tools/snapshot_store.py]
+    command: [--help]
+    environment:
+      SNAPSHOT_S3_ENDPOINT_URL: http://seaweedfs:8333
+      SNAPSHOT_S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?}
+      SNAPSHOT_S3_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?}
+    volumes:
+      - ./scripts/snapshot_store.py:/tools/snapshot_store.py:ro
+      - ./.local/backups:/backups
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]

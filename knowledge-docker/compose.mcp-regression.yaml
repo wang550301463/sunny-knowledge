@@ -1,0 +1,5 @@
+# Test workload signing material is mounted only for explicit internal auth boundary tests.
+services:
+  regression:
+    volumes:
+      - ./.local/identities/mcp/private.pem:/run/test/mcp/private.pem:ro

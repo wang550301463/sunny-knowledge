@@ -1,0 +1,27 @@
+# Private instances of the real gateway image; no host ports or live gateway reconfiguration.
+services:
+  gateway-admission-regression:
+    extends:
+      file: compose.yaml
+      service: gateway
+    profiles: [test]
+    ports: !reset []
+    environment:
+      GATEWAY_PEER_LIMIT: '2'
+      GATEWAY_IDP_LIMIT: '2'
+      GATEWAY_PRINCIPAL_LIMIT: '2'
+      GATEWAY_LIMIT_WINDOW: 1m
+    restart: 'no'
+  gateway-unavailable-regression:
+    extends:
+      file: compose.yaml
+      service: gateway
+    profiles: [test]
+    ports: !reset []
+    environment:
+      VALKEY_URL: redis://127.0.0.1:1/0
+    restart: 'no'
+  regression:
+    volumes:
+      - ./tests/gateway_http:/workspace/knowledge-docker/tests/gateway_http:ro
+      - ./tests/observability:/workspace/knowledge-docker/tests/observability:ro

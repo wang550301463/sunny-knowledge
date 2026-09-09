@@ -1,0 +1,41 @@
+# Standalone project only; do not merge with compose.yaml. No host ports.
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_PASSWORD: ${PG_RESTORE_TEST_PASSWORD:?test-only password required}
+      POSTGRES_DB: postgres
+    labels:
+      org.sunny-knowledge.purpose: postgres-restore-regression
+    networks: [restore]
+    volumes: [restore-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U postgres -d postgres]
+      interval: 1s
+      timeout: 3s
+      retries: 40
+  seed:
+    image: sunny-knowledge/regression:v2-local
+    profiles: [test]
+    command: [python, /fixture/seed.py]
+    environment:
+      PG_RESTORE_TEST_PASSWORD: ${PG_RESTORE_TEST_PASSWORD:?test-only password required}
+      PG_RESTORE_TEST_ENCRYPTION_KEY: ${PG_RESTORE_TEST_ENCRYPTION_KEY:?test-only key required}
+      PYTHONPATH: /workspace/services/python/src
+    networks: [restore]
+    volumes:
+      - ./tests/postgres_restore:/fixture:ro
+      - ../services/python/src:/workspace/services/python/src:ro
+    read_only: true
+    tmpfs: [/tmp]
+    labels:
+      org.sunny-knowledge.purpose: postgres-restore-regression
+networks:
+  restore:
+    internal: true
+    labels:
+      org.sunny-knowledge.purpose: postgres-restore-regression
+volumes:
+  restore-data:
+    labels:
+      org.sunny-knowledge.purpose: postgres-restore-regression

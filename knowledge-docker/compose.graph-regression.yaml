@@ -1,0 +1,60 @@
+# Explicit opt-in: isolated Git/projection acceptance, simulated model HTTP only.
+# Combine with compose.yaml; never combine with compose.retrieval-regression.yaml.
+services:
+  git-fixture:
+    image: sunny-knowledge/git-fixture:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/GitFixture.Dockerfile
+    profiles: [test]
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  git-model-provider:
+    image: sunny-knowledge/regression:v2-local
+    profiles: [test]
+    command: [python, knowledge-docker/tests/model_provider/server.py]
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  llm:
+    environment:
+      LLM_ALLOW_HTTP_PROVIDERS: 'true'
+  retrieval:
+    environment: &git-retrieval
+      DATABASE_URL: ${GIT_GRAPH_RETRIEVAL_DATABASE_URL:-postgresql+psycopg://unconfigured:unconfigured@postgres:5432/unconfigured}
+      RETRIEVAL_ES_INDEX: ${GIT_GRAPH_ES_INDEX:-knowledge-git-graph-unconfigured}
+      RETRIEVAL_EMBEDDING_CONFIGURATION_ID: ${GIT_GRAPH_EMBEDDING_CONFIGURATION_ID:-}
+      RETRIEVAL_EMBEDDING_DIMENSIONS: '8'
+      RETRIEVAL_RERANK_CONFIGURATION_ID: ${GIT_GRAPH_RERANK_CONFIGURATION_ID:-}
+      RETRIEVAL_POLL_SECONDS: '0.1'
+  retrieval-worker:
+    environment: *git-retrieval
+  graphiti:
+    environment: &git-graph
+      DATABASE_URL: ${GRAPH_REGRESSION_DATABASE_URL:-postgresql+psycopg://unconfigured:unconfigured@postgres:5432/unconfigured}
+      GRAPHITI_NAMESPACE: ${GRAPH_REGRESSION_NAMESPACE:-knowledge-git-graph-unconfigured}
+      GRAPHITI_POLL_SECONDS: '0.1'
+      GRAPHITI_RECONCILE_SECONDS: '2'
+  graphiti-worker:
+    environment: *git-graph
+  regression:
+    environment:
+      GIT_GRAPH_FIXTURE_URL: http://git-fixture:8080
+      GIT_GRAPH_MODEL_PROVIDER_URL: http://git-model-provider:8080
+    volumes:
+      - ./.local/git-graph-regression.json:/workspace/knowledge-docker/.local/git-graph-regression.json:ro
+      - ./tests/git_fixture:/workspace/knowledge-docker/tests/git_fixture:ro
+      - ./tests/git_graph_http:/workspace/knowledge-docker/tests/git_graph_http:ro

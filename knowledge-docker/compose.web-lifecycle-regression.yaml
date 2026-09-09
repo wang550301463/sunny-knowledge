@@ -1,0 +1,15 @@
+# Actual Chromium, Keycloak, canonical Wiki and source ACL. No model is used.
+services:
+  web-lifecycle-regression:
+    image: sunny-knowledge/web-regression:v2-local
+    profiles: [test]
+    init: true
+    shm_size: 1gb
+    command: [npx, playwright, test, --config=/tests/web_lifecycle/playwright.config.js]
+    networks: [backend]
+    volumes:
+      - ./.local/test-env.json:/run/knowledge/test-env.json:ro
+      - ./tests/web:/tests/web:ro
+      - ./tests/web_agent:/tests/web_agent:ro
+      - ./tests/web_lifecycle:/tests/web_lifecycle:ro
+      - ./artifacts:/artifacts

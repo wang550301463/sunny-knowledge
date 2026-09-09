@@ -1,0 +1,45 @@
+# Explicit browser + real Neo4j acceptance; combine with compose.graph-regression.yaml.
+# Does not configure or restart production services. The operator owns runtime switching.
+services:
+  web-graph-git-fixture:
+    extends:
+      file: compose.graph-regression.yaml
+      service: git-fixture
+    command: [python, /tests/web_graph/git_server.py]
+    volumes:
+      - ./tests/git_fixture:/tests/git_fixture:ro
+      - ./tests/web_graph:/tests/web_graph:ro
+  web-graph-regression:
+    image: sunny-knowledge/web-regression:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/WebRegression.Dockerfile
+    profiles: [test]
+    init: true
+    shm_size: 1gb
+    command: [npx, playwright, test, --config, /tests/web_graph/playwright.config.js]
+    environment:
+      WEB_GRAPH_FAULT_GATE: 'true'
+    networks: [backend]
+    volumes:
+      - ./.local/test-env.json:/run/knowledge/test-env.json:ro
+      - ./.local/git-graph-regression.json:/run/knowledge/git-graph-regression.json:ro
+      - ./.local/web-graph-browser:/run/web-graph-fixture
+      - ./tests/web:/tests/web:ro
+      - ./tests/web_agent:/tests/web_agent:ro
+      - ./tests/web_graph:/tests/web_graph:ro
+      - ./artifacts:/artifacts
+  web-graph-fault-control:
+    image: sunny-knowledge/regression:v2-local
+    profiles: [test]
+    read_only: true
+    tmpfs: [/tmp]
+    command: [python, /tests/web_graph/fault_control.py]
+    environment:
+      TEST_GRAPHITI_NEO4J_URI: bolt://neo4j:7687
+      TEST_GRAPHITI_NEO4J_PASSWORD: ${NEO4J_PASSWORD:?}
+    networks: [backend]
+    volumes:
+      - ./.local/git-graph-regression.json:/run/knowledge/git-graph-regression.json:ro
+      - ./.local/web-graph-browser:/run/web-graph-fixture
+      - ./tests/web_graph:/tests/web_graph:ro

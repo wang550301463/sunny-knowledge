@@ -1,0 +1,9 @@
+apiVersion: 1
+providers:
+  - name: Knowledge
+    folder: Knowledge
+    type: file
+    disableDeletion: true
+    editable: false
+    options:
+      path: /etc/grafana/knowledge-dashboards

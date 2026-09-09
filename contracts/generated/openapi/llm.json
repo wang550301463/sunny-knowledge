@@ -1,0 +1,2961 @@
+{
+  "components": {
+    "schemas": {
+      "AuditEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor_id": {
+            "title": "Actor Id",
+            "type": "string"
+          },
+          "configuration_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Configuration Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "configuration_id",
+          "action",
+          "actor_id",
+          "details",
+          "created_at"
+        ],
+        "title": "AuditEvent",
+        "type": "object"
+      },
+      "AuditList": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEvent"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "AuditList",
+        "type": "object"
+      },
+      "CapabilityTestResult": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "capabilities": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Capabilities",
+            "type": "object"
+          },
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "dimensions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimensions"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "test_state": {
+            "enum": [
+              "passed",
+              "failed"
+            ],
+            "title": "Test State",
+            "type": "string"
+          },
+          "tested_at": {
+            "format": "date-time",
+            "title": "Tested At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "configuration_id",
+          "test_state",
+          "capabilities",
+          "dimensions",
+          "error_code",
+          "tested_at"
+        ],
+        "title": "CapabilityTestResult",
+        "type": "object"
+      },
+      "ChatRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "configuration_id": {
+            "format": "uuid",
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "max_output_tokens": {
+            "anyOf": [
+              {
+                "maximum": 32768.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Output Tokens"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Messages",
+            "type": "array"
+          },
+          "response_format": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Format"
+          },
+          "stream": {
+            "default": false,
+            "title": "Stream",
+            "type": "boolean"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/ToolDefinition"
+            },
+            "maxItems": 20,
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "configuration_id",
+          "messages"
+        ],
+        "title": "ChatRequest",
+        "type": "object"
+      },
+      "ChatResult": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "finish_reason": {
+            "enum": [
+              "stop",
+              "length",
+              "tool_calls",
+              "content_filter"
+            ],
+            "title": "Finish Reason",
+            "type": "string"
+          },
+          "invocation_id": {
+            "title": "Invocation Id",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/ToolCall"
+            },
+            "title": "Tool Calls",
+            "type": "array"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "required": [
+          "configuration_id",
+          "invocation_id",
+          "usage",
+          "request_id",
+          "content",
+          "tool_calls",
+          "finish_reason"
+        ],
+        "title": "ChatResult",
+        "type": "object"
+      },
+      "Completed": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "finish_reason": {
+            "enum": [
+              "stop",
+              "length",
+              "tool_calls",
+              "content_filter"
+            ],
+            "title": "Finish Reason",
+            "type": "string"
+          },
+          "invocation_id": {
+            "title": "Invocation Id",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/ToolCall"
+            },
+            "title": "Tool Calls",
+            "type": "array"
+          },
+          "type": {
+            "const": "completed",
+            "title": "Type",
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "required": [
+          "configuration_id",
+          "invocation_id",
+          "usage",
+          "request_id",
+          "content",
+          "tool_calls",
+          "finish_reason",
+          "type"
+        ],
+        "title": "Completed",
+        "type": "object"
+      },
+      "ContentDelta": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "delta": {
+            "title": "Delta",
+            "type": "string"
+          },
+          "invocation_id": {
+            "title": "Invocation Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "content_delta",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "configuration_id",
+          "invocation_id",
+          "delta"
+        ],
+        "title": "ContentDelta",
+        "type": "object"
+      },
+      "DomainErrorEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "EmbeddingRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "configuration_id": {
+            "format": "uuid",
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "input": {
+            "items": {
+              "maxLength": 65536,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 256,
+            "minItems": 1,
+            "title": "Input",
+            "type": "array"
+          }
+        },
+        "required": [
+          "configuration_id",
+          "input"
+        ],
+        "title": "EmbeddingRequest",
+        "type": "object"
+      },
+      "EmbeddingResult": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "dimensions": {
+            "title": "Dimensions",
+            "type": "integer"
+          },
+          "embeddings": {
+            "items": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "title": "Embeddings",
+            "type": "array"
+          },
+          "invocation_id": {
+            "title": "Invocation Id",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "required": [
+          "configuration_id",
+          "invocation_id",
+          "usage",
+          "request_id",
+          "embeddings",
+          "dimensions"
+        ],
+        "title": "EmbeddingResult",
+        "type": "object"
+      },
+      "FunctionCall": {
+        "additionalProperties": false,
+        "properties": {
+          "arguments": {
+            "maxLength": 65536,
+            "title": "Arguments",
+            "type": "string"
+          },
+          "name": {
+            "pattern": "^[a-zA-Z0-9_-]{1,64}$",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "FunctionCall",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "JsonValue": {},
+      "Message": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "maxLength": 131072,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "role": {
+            "enum": [
+              "system",
+              "developer",
+              "user",
+              "assistant",
+              "tool"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ToolCall"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "Message",
+        "type": "object"
+      },
+      "ModelConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "base_url": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Base Url",
+            "type": "string"
+          },
+          "capability": {
+            "enum": [
+              "chat",
+              "embedding",
+              "rerank"
+            ],
+            "title": "Capability",
+            "type": "string"
+          },
+          "chat_enable_thinking": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Enable Thinking"
+          },
+          "chat_token_parameter": {
+            "default": "max_completion_tokens",
+            "enum": [
+              "max_completion_tokens",
+              "max_tokens"
+            ],
+            "title": "Chat Token Parameter",
+            "type": "string"
+          },
+          "concurrency_per_replica": {
+            "default": 4,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Concurrency Per Replica",
+            "type": "integer"
+          },
+          "dimensions": {
+            "anyOf": [
+              {
+                "maximum": 16384.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimensions"
+          },
+          "max_batch_size": {
+            "default": 64,
+            "maximum": 256.0,
+            "minimum": 1.0,
+            "title": "Max Batch Size",
+            "type": "integer"
+          },
+          "max_input_chars": {
+            "default": 131072,
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Max Input Chars",
+            "type": "integer"
+          },
+          "max_output_tokens": {
+            "default": 4096,
+            "maximum": 32768.0,
+            "minimum": 1.0,
+            "title": "Max Output Tokens",
+            "type": "integer"
+          },
+          "max_queue_per_replica": {
+            "default": 16,
+            "maximum": 200.0,
+            "minimum": 0.0,
+            "title": "Max Queue Per Replica",
+            "type": "integer"
+          },
+          "max_response_bytes": {
+            "default": 8000000,
+            "maximum": 32000000.0,
+            "minimum": 1024.0,
+            "title": "Max Response Bytes",
+            "type": "integer"
+          },
+          "max_retries": {
+            "default": 2,
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Max Retries",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Provider",
+            "type": "string"
+          },
+          "provider_model": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\s\\x00-\\x1f]+$",
+            "title": "Provider Model",
+            "type": "string"
+          },
+          "request_dimensions": {
+            "default": false,
+            "title": "Request Dimensions",
+            "type": "boolean"
+          },
+          "timeout_seconds": {
+            "default": 60,
+            "maximum": 180.0,
+            "minimum": 0.01,
+            "title": "Timeout Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "provider",
+          "provider_model",
+          "base_url",
+          "capability"
+        ],
+        "title": "ModelConfig",
+        "type": "object"
+      },
+      "ModelCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "base_url": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Base Url",
+            "type": "string"
+          },
+          "capability": {
+            "enum": [
+              "chat",
+              "embedding",
+              "rerank"
+            ],
+            "title": "Capability",
+            "type": "string"
+          },
+          "chat_enable_thinking": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Enable Thinking"
+          },
+          "chat_token_parameter": {
+            "default": "max_completion_tokens",
+            "enum": [
+              "max_completion_tokens",
+              "max_tokens"
+            ],
+            "title": "Chat Token Parameter",
+            "type": "string"
+          },
+          "concurrency_per_replica": {
+            "default": 4,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Concurrency Per Replica",
+            "type": "integer"
+          },
+          "credential": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credential"
+          },
+          "dimensions": {
+            "anyOf": [
+              {
+                "maximum": 16384.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimensions"
+          },
+          "max_batch_size": {
+            "default": 64,
+            "maximum": 256.0,
+            "minimum": 1.0,
+            "title": "Max Batch Size",
+            "type": "integer"
+          },
+          "max_input_chars": {
+            "default": 131072,
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Max Input Chars",
+            "type": "integer"
+          },
+          "max_output_tokens": {
+            "default": 4096,
+            "maximum": 32768.0,
+            "minimum": 1.0,
+            "title": "Max Output Tokens",
+            "type": "integer"
+          },
+          "max_queue_per_replica": {
+            "default": 16,
+            "maximum": 200.0,
+            "minimum": 0.0,
+            "title": "Max Queue Per Replica",
+            "type": "integer"
+          },
+          "max_response_bytes": {
+            "default": 8000000,
+            "maximum": 32000000.0,
+            "minimum": 1024.0,
+            "title": "Max Response Bytes",
+            "type": "integer"
+          },
+          "max_retries": {
+            "default": 2,
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Max Retries",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Provider",
+            "type": "string"
+          },
+          "provider_model": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\s\\x00-\\x1f]+$",
+            "title": "Provider Model",
+            "type": "string"
+          },
+          "request_dimensions": {
+            "default": false,
+            "title": "Request Dimensions",
+            "type": "boolean"
+          },
+          "timeout_seconds": {
+            "default": 60,
+            "maximum": 180.0,
+            "minimum": 0.01,
+            "title": "Timeout Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "provider",
+          "provider_model",
+          "base_url",
+          "capability"
+        ],
+        "title": "ModelCreate",
+        "type": "object"
+      },
+      "ModelList": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ModelView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "ModelList",
+        "type": "object"
+      },
+      "ModelState": {
+        "additionalProperties": false,
+        "properties": {
+          "base_configuration_id": {
+            "format": "uuid",
+            "title": "Base Configuration Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "active",
+              "disabled",
+              "retired"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_configuration_id",
+          "state"
+        ],
+        "title": "ModelState",
+        "type": "object"
+      },
+      "ModelUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "base_configuration_id": {
+            "format": "uuid",
+            "title": "Base Configuration Id",
+            "type": "string"
+          },
+          "config": {
+            "$ref": "#/components/schemas/ModelConfig"
+          },
+          "credential": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credential"
+          }
+        },
+        "required": [
+          "base_configuration_id",
+          "config"
+        ],
+        "title": "ModelUpdate",
+        "type": "object"
+      },
+      "ModelVersions": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ModelView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "ModelVersions",
+        "type": "object"
+      },
+      "ModelView": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "base_url": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Base Url",
+            "type": "string"
+          },
+          "capabilities": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Capabilities",
+            "type": "object"
+          },
+          "capability": {
+            "enum": [
+              "chat",
+              "embedding",
+              "rerank"
+            ],
+            "title": "Capability",
+            "type": "string"
+          },
+          "chat_enable_thinking": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Enable Thinking"
+          },
+          "chat_token_parameter": {
+            "default": "max_completion_tokens",
+            "enum": [
+              "max_completion_tokens",
+              "max_tokens"
+            ],
+            "title": "Chat Token Parameter",
+            "type": "string"
+          },
+          "concurrency_per_replica": {
+            "default": 4,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Concurrency Per Replica",
+            "type": "integer"
+          },
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "dimensions": {
+            "anyOf": [
+              {
+                "maximum": 16384.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimensions"
+          },
+          "has_credential": {
+            "title": "Has Credential",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "max_batch_size": {
+            "default": 64,
+            "maximum": 256.0,
+            "minimum": 1.0,
+            "title": "Max Batch Size",
+            "type": "integer"
+          },
+          "max_input_chars": {
+            "default": 131072,
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Max Input Chars",
+            "type": "integer"
+          },
+          "max_output_tokens": {
+            "default": 4096,
+            "maximum": 32768.0,
+            "minimum": 1.0,
+            "title": "Max Output Tokens",
+            "type": "integer"
+          },
+          "max_queue_per_replica": {
+            "default": 16,
+            "maximum": 200.0,
+            "minimum": 0.0,
+            "title": "Max Queue Per Replica",
+            "type": "integer"
+          },
+          "max_response_bytes": {
+            "default": 8000000,
+            "maximum": 32000000.0,
+            "minimum": 1024.0,
+            "title": "Max Response Bytes",
+            "type": "integer"
+          },
+          "max_retries": {
+            "default": 2,
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Max Retries",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "title": "Provider",
+            "type": "string"
+          },
+          "provider_model": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\s\\x00-\\x1f]+$",
+            "title": "Provider Model",
+            "type": "string"
+          },
+          "request_dimensions": {
+            "default": false,
+            "title": "Request Dimensions",
+            "type": "boolean"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "test_error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Error Code"
+          },
+          "test_state": {
+            "title": "Test State",
+            "type": "string"
+          },
+          "tested_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tested At"
+          },
+          "timeout_seconds": {
+            "default": 60,
+            "maximum": 180.0,
+            "minimum": 0.01,
+            "title": "Timeout Seconds",
+            "type": "number"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "provider",
+          "provider_model",
+          "base_url",
+          "capability",
+          "id",
+          "configuration_id",
+          "version",
+          "state",
+          "has_credential",
+          "created_at",
+          "created_by",
+          "test_state",
+          "capabilities",
+          "tested_at",
+          "test_error_code"
+        ],
+        "title": "ModelView",
+        "type": "object"
+      },
+      "RankedDocument": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Score"
+          }
+        },
+        "required": [
+          "index",
+          "score"
+        ],
+        "title": "RankedDocument",
+        "type": "object"
+      },
+      "RerankRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "configuration_id": {
+            "format": "uuid",
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "documents": {
+            "items": {
+              "maxLength": 65536,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 256,
+            "minItems": 1,
+            "title": "Documents",
+            "type": "array"
+          },
+          "query": {
+            "maxLength": 65536,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "top_n": {
+            "anyOf": [
+              {
+                "maximum": 256.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top N"
+          }
+        },
+        "required": [
+          "configuration_id",
+          "query",
+          "documents"
+        ],
+        "title": "RerankRequest",
+        "type": "object"
+      },
+      "RerankResult": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "invocation_id": {
+            "title": "Invocation Id",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/RankedDocument"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "required": [
+          "configuration_id",
+          "invocation_id",
+          "usage",
+          "request_id",
+          "results"
+        ],
+        "title": "RerankResult",
+        "type": "object"
+      },
+      "StreamError": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/StreamErrorDetail"
+          },
+          "type": {
+            "const": "error",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "error"
+        ],
+        "title": "StreamError",
+        "type": "object"
+      },
+      "StreamErrorDetail": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "StreamErrorDetail",
+        "type": "object"
+      },
+      "TestRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "configuration_id": {
+            "format": "uuid",
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "test_stream": {
+            "default": false,
+            "title": "Test Stream",
+            "type": "boolean"
+          },
+          "test_tools": {
+            "default": false,
+            "title": "Test Tools",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "configuration_id"
+        ],
+        "title": "TestRequest",
+        "type": "object"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "properties": {
+          "function": {
+            "$ref": "#/components/schemas/FunctionCall"
+          },
+          "id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallDelta": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "invocation_id": {
+            "title": "Invocation Id",
+            "type": "string"
+          },
+          "tool_call": {
+            "$ref": "#/components/schemas/ToolCall"
+          },
+          "type": {
+            "const": "tool_call_delta",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "configuration_id",
+          "invocation_id",
+          "index",
+          "tool_call"
+        ],
+        "title": "ToolCallDelta",
+        "type": "object"
+      },
+      "ToolDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "function": {
+            "$ref": "#/components/schemas/ToolFunction"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "function"
+        ],
+        "title": "ToolDefinition",
+        "type": "object"
+      },
+      "ToolFunction": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "pattern": "^[a-zA-Z0-9_-]{1,64}$",
+            "title": "Name",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "title": "Parameters",
+            "type": "object"
+          },
+          "strict": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strict"
+          }
+        },
+        "required": [
+          "name",
+          "parameters"
+        ],
+        "title": "ToolFunction",
+        "type": "object"
+      },
+      "Usage": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "completion_tokens": {
+            "default": 0,
+            "title": "Completion Tokens",
+            "type": "integer"
+          },
+          "prompt_tokens": {
+            "default": 0,
+            "title": "Prompt Tokens",
+            "type": "integer"
+          },
+          "search_units": {
+            "default": 0,
+            "title": "Search Units",
+            "type": "integer"
+          },
+          "total_tokens": {
+            "default": 0,
+            "title": "Total Tokens",
+            "type": "integer"
+          }
+        },
+        "title": "Usage",
+        "type": "object"
+      },
+      "UsageEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "caller": {
+            "title": "Caller",
+            "type": "string"
+          },
+          "capability": {
+            "enum": [
+              "chat",
+              "embedding",
+              "rerank"
+            ],
+            "title": "Capability",
+            "type": "string"
+          },
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          },
+          "invocation_id": {
+            "title": "Invocation Id",
+            "type": "string"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "required": [
+          "invocation_id",
+          "configuration_id",
+          "caller",
+          "capability",
+          "started_at",
+          "outcome",
+          "duration_ms",
+          "request_id",
+          "usage"
+        ],
+        "title": "UsageEvent",
+        "type": "object"
+      },
+      "UsageList": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UsageEvent"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "UsageList",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ServiceIdentity": {
+        "description": "Fresh per-caller Ed25519 workload JWT, target audience. Supplied only by the existing trusted transport.",
+        "in": "header",
+        "name": "X-Service-Token",
+        "type": "apiKey"
+      },
+      "UserBearer": {
+        "description": "Forward the original user/delegated bearer unchanged; the existing auth boundary performs current authorization. Generated operations never retain it.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "Model Service",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/models": {
+      "get": {
+        "operationId": "llm_get_api_v1_models",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "capability",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "chat",
+                    "embedding",
+                    "rerank"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Capability"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "List Models",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.list_models",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      },
+      "post": {
+        "operationId": "llm_post_api_v1_models",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Create Model",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.create_model",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/models/{model_id}": {
+      "delete": {
+        "operationId": "llm_delete_api_v1_models_by_model_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Model Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "base_configuration_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Configuration Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Retire Model",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.retire_model",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      },
+      "get": {
+        "operationId": "llm_get_api_v1_models_by_model_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Model Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Get Model",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.get_model",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      },
+      "put": {
+        "operationId": "llm_put_api_v1_models_by_model_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Model Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Update Model",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.update_model",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/models/{model_id}/audit": {
+      "get": {
+        "operationId": "llm_get_api_v1_models_by_model_id_audit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Model Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Audit",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.audit",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/models/{model_id}/state": {
+      "patch": {
+        "operationId": "llm_patch_api_v1_models_by_model_id_state",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Model Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelState"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Model State",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.model_state",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/models/{model_id}/test": {
+      "post": {
+        "operationId": "llm_post_api_v1_models_by_model_id_test",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Model Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilityTestResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Test Model",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.test_model",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/models/{model_id}/usage": {
+      "get": {
+        "operationId": "llm_get_api_v1_models_by_model_id_usage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Model Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Model Usage",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.model_usage",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/models/{model_id}/versions": {
+      "get": {
+        "operationId": "llm_get_api_v1_models_by_model_id_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Model Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelVersions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Versions",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.versions",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "llm_get_healthz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "service": {
+                      "const": "llm",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": "ok",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "service",
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [],
+        "summary": "Health",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.health",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/chat": {
+      "post": {
+        "operationId": "llm_post_internal_v1_chat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResult"
+                }
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Chat",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-event-schema": {
+          "discriminator": {
+            "mapping": {
+              "completed": "#/components/schemas/Completed",
+              "content_delta": "#/components/schemas/ContentDelta",
+              "error": "#/components/schemas/StreamError",
+              "tool_call_delta": "#/components/schemas/ToolCallDelta"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/ContentDelta"
+            },
+            {
+              "$ref": "#/components/schemas/ToolCallDelta"
+            },
+            {
+              "$ref": "#/components/schemas/Completed"
+            },
+            {
+              "$ref": "#/components/schemas/StreamError"
+            }
+          ]
+        },
+        "x-handler": "create_app.<locals>.chat",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-stream-selection": "Native ChatRequest.stream selects true SSE with x-event-schema; false returns the declared JSON ChatResult. Existing stream cancellation and native adapter validation remain authoritative.",
+        "x-transport": "http-json-or-sse"
+      }
+    },
+    "/internal/v1/embeddings": {
+      "post": {
+        "operationId": "llm_post_internal_v1_embeddings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmbeddingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmbeddingResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Embeddings",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.embeddings",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/models": {
+      "get": {
+        "operationId": "llm_get_internal_v1_models",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "capability",
+            "required": true,
+            "schema": {
+              "enum": [
+                "chat",
+                "embedding",
+                "rerank"
+              ],
+              "title": "Capability",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Discover",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.discover",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/models/configurations/{configuration_id}": {
+      "get": {
+        "operationId": "llm_get_internal_v1_models_configurations_by_configuration_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "configuration_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Configuration Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Configuration Metadata",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.configuration_metadata",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/rerank": {
+      "post": {
+        "operationId": "llm_post_internal_v1_rerank",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RerankRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RerankResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": []
+          }
+        ],
+        "summary": "Rerank",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.rerank",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "llm_get_readyz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "status": {
+                      "const": "ready",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [],
+        "summary": "Ready",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.ready",
+        "x-response-typing": "typed",
+        "x-service": "llm",
+        "x-source": "services/python/src/knowledge_platform/llm/app.py",
+        "x-transport": "http-json"
+      }
+    }
+  },
+  "x-contract-source": "runtime FastAPI routes and native Pydantic schemas",
+  "x-framework-routes": [],
+  "x-mounted-protocols": [],
+  "x-runtime-service-version": "1.0.0"
+}

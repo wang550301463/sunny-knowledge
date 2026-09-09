@@ -1,0 +1,2726 @@
+{
+  "components": {
+    "schemas": {
+      "Claim": {
+        "additionalProperties": false,
+        "properties": {
+          "entity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EntityIdentity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Service",
+                  "Module",
+                  "File",
+                  "Person",
+                  "Dependency",
+                  "Decision",
+                  "Policy",
+                  "Incident",
+                  "Change",
+                  "Procedure"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            },
+            "maxItems": 100,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "default": "fact",
+            "enum": [
+              "fact",
+              "inference",
+              "gap"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RelationIdentity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "default": "valid",
+            "enum": [
+              "valid",
+              "stale",
+              "retracted"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "Claim",
+        "type": "object"
+      },
+      "ConflictComparison": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "current_content_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Content Sha256"
+          },
+          "original_base_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Base Revision"
+          },
+          "proposed_content_sha256": {
+            "title": "Proposed Content Sha256",
+            "type": "string"
+          },
+          "review_base_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Base Revision"
+          }
+        },
+        "required": [
+          "original_base_revision",
+          "review_base_revision",
+          "proposed_content_sha256",
+          "current_content_sha256"
+        ],
+        "title": "ConflictComparison",
+        "type": "object"
+      },
+      "ConflictProposal": {
+        "additionalProperties": false,
+        "properties": {
+          "base_revision": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Revision"
+          },
+          "reason": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_revision",
+          "reason"
+        ],
+        "title": "ConflictProposal",
+        "type": "object"
+      },
+      "ConflictView": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "blocked_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blocked Reason"
+          },
+          "can_propose": {
+            "title": "Can Propose",
+            "type": "boolean"
+          },
+          "comparison": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConflictComparison"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Revision"
+          },
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "original_base_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Base Revision"
+          },
+          "page_id": {
+            "title": "Page Id",
+            "type": "string"
+          },
+          "proposal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposal Id"
+          },
+          "request": {
+            "$ref": "#/components/schemas/FrozenRequest"
+          },
+          "review_base_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Base Revision"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "integer"
+          },
+          "step_number": {
+            "title": "Step Number",
+            "type": "integer"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "step_number",
+          "page_id",
+          "source_version",
+          "operation",
+          "original_base_revision",
+          "review_base_revision",
+          "current_revision",
+          "request",
+          "comparison",
+          "proposal_id",
+          "can_propose",
+          "blocked_reason"
+        ],
+        "title": "ConflictView",
+        "type": "object"
+      },
+      "Credential": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "ssh_known_hosts": {
+            "anyOf": [
+              {
+                "maxLength": 64000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssh Known Hosts"
+          },
+          "ssh_private_key": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssh Private Key"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          }
+        },
+        "title": "Credential",
+        "type": "object"
+      },
+      "DiagnosticView": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Location"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "info",
+                  "warning",
+                  "error"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "DiagnosticView",
+        "type": "object"
+      },
+      "DomainErrorEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "EntityIdentity": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "Service",
+              "Module",
+              "File",
+              "Person",
+              "Dependency",
+              "Decision",
+              "Policy",
+              "Incident",
+              "Change",
+              "Procedure"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "title": "EntityIdentity",
+        "type": "object"
+      },
+      "EvidenceRef": {
+        "additionalProperties": false,
+        "properties": {
+          "end_line": {
+            "minimum": 1.0,
+            "title": "End Line",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "code",
+              "markdown",
+              "ticket",
+              "policy",
+              "source_manifest"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "resource_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "revision_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "source_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_revision": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Source Revision",
+            "type": "string"
+          },
+          "start_line": {
+            "minimum": 1.0,
+            "title": "Start Line",
+            "type": "integer"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "resource_id",
+          "revision_id",
+          "source_id",
+          "source_revision",
+          "path",
+          "start_line",
+          "end_line",
+          "kind"
+        ],
+        "title": "EvidenceRef",
+        "type": "object"
+      },
+      "FrozenRequest": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "description": "Public portion of a frozen step; compiler/proposal/validity/deletion variants.",
+        "properties": {
+          "after_manifest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "base_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Revision"
+          },
+          "before_manifest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "claim_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Claim Ids",
+            "type": "array"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageContent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deleted_paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Deleted Paths",
+            "type": "array"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "proof": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "stale",
+                  "retracted"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          }
+        },
+        "title": "FrozenRequest",
+        "type": "object"
+      },
+      "GitConfigView": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "exclude_paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclude Paths",
+            "type": "array"
+          },
+          "include_paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Include Paths",
+            "type": "array"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "ref"
+        ],
+        "title": "GitConfigView",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "JsonValue": {},
+      "Location": {
+        "properties": {
+          "end_byte": {
+            "title": "End Byte",
+            "type": "integer"
+          },
+          "end_column": {
+            "title": "End Column",
+            "type": "integer"
+          },
+          "end_line": {
+            "title": "End Line",
+            "type": "integer"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "start_byte": {
+            "title": "Start Byte",
+            "type": "integer"
+          },
+          "start_column": {
+            "title": "Start Column",
+            "type": "integer"
+          },
+          "start_line": {
+            "title": "Start Line",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "start_line",
+          "end_line",
+          "start_column",
+          "end_column",
+          "start_byte",
+          "end_byte"
+        ],
+        "title": "Location",
+        "type": "object"
+      },
+      "PageContent": {
+        "additionalProperties": false,
+        "properties": {
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            },
+            "maxItems": 1000,
+            "title": "Claims",
+            "type": "array"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Service",
+                  "Module",
+                  "File",
+                  "Person",
+                  "Dependency",
+                  "Decision",
+                  "Policy",
+                  "Incident",
+                  "Change",
+                  "Procedure"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            },
+            "maxItems": 1000,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "markdown": {
+            "maxLength": 4000000,
+            "title": "Markdown",
+            "type": "string"
+          },
+          "state": {
+            "default": "valid",
+            "enum": [
+              "valid",
+              "stale",
+              "retracted"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "title",
+          "markdown"
+        ],
+        "title": "PageContent",
+        "type": "object"
+      },
+      "PreviewFile": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "diagnostics": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Diagnostics",
+            "type": "array"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "size",
+          "sha256",
+          "kind",
+          "diagnostics"
+        ],
+        "title": "PreviewFile",
+        "type": "object"
+      },
+      "PreviewSummary": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "file_count": {
+            "title": "File Count",
+            "type": "integer"
+          },
+          "source_revision": {
+            "title": "Source Revision",
+            "type": "string"
+          },
+          "total_bytes": {
+            "title": "Total Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "source_revision",
+          "file_count",
+          "total_bytes"
+        ],
+        "title": "PreviewSummary",
+        "type": "object"
+      },
+      "PreviewView": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "diagnostics": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Diagnostics",
+            "type": "array"
+          },
+          "file_count": {
+            "title": "File Count",
+            "type": "integer"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/PreviewFile"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_revision": {
+            "title": "Source Revision",
+            "type": "string"
+          },
+          "total_bytes": {
+            "title": "Total Bytes",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "source_revision",
+          "file_count",
+          "total_bytes",
+          "source_id",
+          "version",
+          "diagnostics",
+          "files"
+        ],
+        "title": "PreviewView",
+        "type": "object"
+      },
+      "RelationIdentity": {
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          },
+          "target_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Target Id",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "depends_on",
+              "uses",
+              "owns",
+              "cites",
+              "governed_by",
+              "caused",
+              "fixed",
+              "supersedes",
+              "contradicts"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "target_id",
+          "type"
+        ],
+        "title": "RelationIdentity",
+        "type": "object"
+      },
+      "RevisionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "page_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Page Id",
+            "type": "string"
+          },
+          "revision_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Revision Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_id",
+          "revision_id"
+        ],
+        "title": "RevisionInput",
+        "type": "object"
+      },
+      "RevisionProposal": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "access_dependencies": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Access Dependencies",
+            "type": "array"
+          },
+          "base_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Revision"
+          },
+          "content": {
+            "$ref": "#/components/schemas/PageContent"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_revisions": {
+            "items": {
+              "$ref": "#/components/schemas/RevisionInput"
+            },
+            "title": "Input Revisions",
+            "type": "array"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "page_id": {
+            "title": "Page Id",
+            "type": "string"
+          },
+          "proposed_by": {
+            "title": "Proposed By",
+            "type": "string"
+          },
+          "published_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Revision"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "review_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Reason"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "page_id",
+          "base_revision",
+          "content",
+          "access_dependencies",
+          "input_revisions",
+          "kind",
+          "reason",
+          "status",
+          "proposed_by",
+          "reviewed_by",
+          "review_reason",
+          "published_revision",
+          "created_at",
+          "reviewed_at"
+        ],
+        "title": "RevisionProposal",
+        "type": "object"
+      },
+      "SourceCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "credential": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Credential"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "enum": [
+              "git",
+              "markdown",
+              "ticket"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "space_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Space Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "space_id",
+          "kind",
+          "config"
+        ],
+        "title": "SourceCreate",
+        "type": "object"
+      },
+      "SourceList": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SourceView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "SourceList",
+        "type": "object"
+      },
+      "SourceUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "base_version": {
+            "minimum": 1.0,
+            "title": "Base Version",
+            "type": "integer"
+          },
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "credential": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Credential"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_version",
+          "name",
+          "config"
+        ],
+        "title": "SourceUpdate",
+        "type": "object"
+      },
+      "SourceView": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GitConfigView"
+              },
+              {
+                "$ref": "#/components/schemas/UploadConfigView"
+              }
+            ],
+            "title": "Config"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "generation": {
+            "title": "Generation",
+            "type": "integer"
+          },
+          "has_credential": {
+            "title": "Has Credential",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "git",
+              "markdown",
+              "ticket"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "latest_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Task Id"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "preview": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviewSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "space_id": {
+            "title": "Space Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "space_id",
+          "resource_id",
+          "kind",
+          "version",
+          "generation",
+          "config",
+          "has_credential",
+          "state",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "latest_task_id",
+          "preview"
+        ],
+        "title": "SourceView",
+        "type": "object"
+      },
+      "TaskList": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TaskView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "TaskList",
+        "type": "object"
+      },
+      "TaskResult": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "diagnostics": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticView"
+            },
+            "title": "Diagnostics",
+            "type": "array"
+          },
+          "diagnostics_truncated": {
+            "default": false,
+            "title": "Diagnostics Truncated",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TaskResultItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "TaskResult",
+        "type": "object"
+      },
+      "TaskResultItem": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "conflict_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conflict Available"
+          },
+          "conflict_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conflict Url"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "page_id": {
+            "title": "Page Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "proposal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposal Id"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution"
+          },
+          "revision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Id"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "step_number": {
+            "title": "Step Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page_id",
+          "path",
+          "step_number",
+          "status"
+        ],
+        "title": "TaskResultItem",
+        "type": "object"
+      },
+      "TaskView": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "compiler_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compiler Version"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "operation": {
+            "enum": [
+              "sync",
+              "delete"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "result": {
+            "$ref": "#/components/schemas/TaskResult"
+          },
+          "schema_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Version"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "integer"
+          },
+          "space_id": {
+            "title": "Space Id",
+            "type": "string"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "source_version",
+          "space_id",
+          "operation",
+          "status",
+          "stage",
+          "error_code",
+          "result",
+          "created_at",
+          "updated_at",
+          "compiler_version",
+          "schema_version"
+        ],
+        "title": "TaskView",
+        "type": "object"
+      },
+      "UploadConfigView": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "UploadConfigView",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VersionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "base_version": {
+            "minimum": 1.0,
+            "title": "Base Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "base_version"
+        ],
+        "title": "VersionRequest",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ServiceIdentity": {
+        "description": "Fresh per-caller Ed25519 workload JWT, target audience. Supplied only by the existing trusted transport.",
+        "in": "header",
+        "name": "X-Service-Token",
+        "type": "apiKey"
+      },
+      "UserBearer": {
+        "description": "Forward the original user/delegated bearer unchanged; the existing auth boundary performs current authorization. Generated operations never retain it.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "Source ingestion",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/sources": {
+      "get": {
+        "operationId": "ingest_get_api_v1_sources",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "space_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Space Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Sources",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.sources",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      },
+      "post": {
+        "operationId": "ingest_post_api_v1_sources",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Create",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.create",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/sources/{source_id}": {
+      "delete": {
+        "operationId": "ingest_delete_api_v1_sources_by_source_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Delete",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.delete",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      },
+      "get": {
+        "operationId": "ingest_get_api_v1_sources_by_source_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Get",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.get",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      },
+      "patch": {
+        "operationId": "ingest_patch_api_v1_sources_by_source_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Update",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.update",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/sources/{source_id}/preview": {
+      "post": {
+        "operationId": "ingest_post_api_v1_sources_by_source_id_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Preview",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.preview",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/sources/{source_id}/sync": {
+      "post": {
+        "operationId": "ingest_post_api_v1_sources_by_source_id_sync",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Sync",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.sync",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/tasks": {
+      "get": {
+        "operationId": "ingest_get_api_v1_tasks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "space_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Space Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Tasks",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.tasks",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/tasks/{task_id}": {
+      "get": {
+        "operationId": "ingest_get_api_v1_tasks_by_task_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Task",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.task",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/tasks/{task_id}/conflicts/{step_number}": {
+      "get": {
+        "operationId": "ingest_get_api_v1_tasks_by_task_id_conflicts_by_step_number",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_number",
+            "required": true,
+            "schema": {
+              "title": "Step Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Conflict",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.conflict",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/tasks/{task_id}/conflicts/{step_number}/propose": {
+      "post": {
+        "operationId": "ingest_post_api_v1_tasks_by_task_id_conflicts_by_step_number_propose",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_number",
+            "required": true,
+            "schema": {
+              "title": "Step Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConflictProposal"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionProposal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Propose Conflict",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.propose_conflict",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "ingest_get_healthz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "service": {
+                      "const": "ingest",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": "ok",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "service",
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [],
+        "summary": "Health",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.health",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "ingest_get_readyz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "status": {
+                      "const": "ready",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [],
+        "summary": "Ready",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.ready",
+        "x-response-typing": "typed",
+        "x-service": "ingest",
+        "x-source": "services/python/src/knowledge_platform/ingest/app.py",
+        "x-transport": "http-json"
+      }
+    }
+  },
+  "x-contract-source": "runtime FastAPI routes and native Pydantic schemas",
+  "x-framework-routes": [],
+  "x-mounted-protocols": [],
+  "x-runtime-service-version": "1.0.0"
+}

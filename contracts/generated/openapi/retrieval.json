@@ -1,0 +1,1541 @@
+{
+  "components": {
+    "schemas": {
+      "DomainErrorEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "EvidenceRef": {
+        "additionalProperties": false,
+        "properties": {
+          "end_line": {
+            "minimum": 1.0,
+            "title": "End Line",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "code",
+              "markdown",
+              "ticket",
+              "policy",
+              "source_manifest"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "resource_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "revision_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "source_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_revision": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Source Revision",
+            "type": "string"
+          },
+          "start_line": {
+            "minimum": 1.0,
+            "title": "Start Line",
+            "type": "integer"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "resource_id",
+          "revision_id",
+          "source_id",
+          "source_revision",
+          "path",
+          "start_line",
+          "end_line",
+          "kind"
+        ],
+        "title": "EvidenceRef",
+        "type": "object"
+      },
+      "GraphEdge": {
+        "additionalProperties": false,
+        "properties": {
+          "fragment_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Fragment Ids",
+            "type": "array"
+          },
+          "id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "fact",
+              "inference"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "target": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Target",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "depends_on",
+              "uses",
+              "owns",
+              "cites",
+              "governed_by",
+              "caused",
+              "fixed",
+              "supersedes",
+              "contradicts"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "target",
+          "type",
+          "kind",
+          "fragment_ids"
+        ],
+        "title": "GraphEdge",
+        "type": "object"
+      },
+      "GraphNode": {
+        "additionalProperties": false,
+        "properties": {
+          "fragment_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Fragment Ids",
+            "type": "array"
+          },
+          "id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "fragment_ids"
+        ],
+        "title": "GraphNode",
+        "type": "object"
+      },
+      "GraphPath": {
+        "additionalProperties": false,
+        "properties": {
+          "edge_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Edge Ids",
+            "type": "array"
+          },
+          "fragment_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Fragment Ids",
+            "type": "array"
+          },
+          "node_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Node Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "node_ids",
+          "edge_ids",
+          "fragment_ids"
+        ],
+        "title": "GraphPath",
+        "type": "object"
+      },
+      "GraphResult": {
+        "additionalProperties": false,
+        "properties": {
+          "degraded": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Degraded",
+            "type": "array"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/GraphEdge"
+            },
+            "maxItems": 200,
+            "title": "Edges",
+            "type": "array"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/GraphNode"
+            },
+            "maxItems": 100,
+            "title": "Nodes",
+            "type": "array"
+          },
+          "paths": {
+            "items": {
+              "$ref": "#/components/schemas/GraphPath"
+            },
+            "maxItems": 200,
+            "title": "Paths",
+            "type": "array"
+          }
+        },
+        "title": "GraphResult",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "JsonValue": {},
+      "OriginalEvidence": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "evidence": {
+            "$ref": "#/components/schemas/EvidenceRef"
+          },
+          "excerpt": {
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "space_id": {
+            "title": "Space Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "evidence",
+          "space_id",
+          "excerpt",
+          "sha256"
+        ],
+        "title": "OriginalEvidence",
+        "type": "object"
+      },
+      "RankedFragment": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "citation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "entity_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Entity Ids",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "is_current": {
+            "title": "Is Current",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "fact",
+              "inference",
+              "gap",
+              "narrative"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "known_at": {
+            "format": "date-time",
+            "title": "Known At",
+            "type": "string"
+          },
+          "page_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Page Id",
+            "type": "string"
+          },
+          "primary": {
+            "title": "Primary",
+            "type": "boolean"
+          },
+          "rerank_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Score"
+          },
+          "revision_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "rrf_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rrf Score"
+          },
+          "space_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Space Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "valid",
+              "stale",
+              "retracted"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 65536,
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "page_id",
+          "revision_id",
+          "version",
+          "space_id",
+          "title",
+          "text",
+          "kind",
+          "entity_ids",
+          "evidence",
+          "state",
+          "known_at",
+          "is_current",
+          "primary",
+          "rrf_score",
+          "rerank_score",
+          "citation_ids",
+          "url"
+        ],
+        "title": "RankedFragment",
+        "type": "object"
+      },
+      "Relations": {
+        "additionalProperties": false,
+        "properties": {
+          "direction": {
+            "default": "outgoing",
+            "enum": [
+              "outgoing",
+              "incoming",
+              "both"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "hops": {
+            "default": 1,
+            "maximum": 2.0,
+            "minimum": 1.0,
+            "title": "Hops",
+            "type": "integer"
+          },
+          "types": {
+            "items": {
+              "enum": [
+                "depends_on",
+                "uses",
+                "owns",
+                "cites",
+                "governed_by",
+                "caused",
+                "fixed",
+                "supersedes",
+                "contradicts"
+              ],
+              "type": "string"
+            },
+            "maxItems": 9,
+            "minItems": 1,
+            "title": "Types",
+            "type": "array"
+          }
+        },
+        "title": "Relations",
+        "type": "object"
+      },
+      "SearchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "embedding_configuration_id": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Configuration Id"
+          },
+          "include_historical": {
+            "default": false,
+            "title": "Include Historical",
+            "type": "boolean"
+          },
+          "known_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Known At"
+          },
+          "limit": {
+            "default": 12,
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 8192,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Relations"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rerank_configuration_id": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Configuration Id"
+          },
+          "space_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Space Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "space_ids",
+          "query"
+        ],
+        "title": "SearchRequest",
+        "type": "object"
+      },
+      "SearchResult": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "auth_epoch": {
+            "title": "Auth Epoch",
+            "type": "integer"
+          },
+          "degraded": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Degraded",
+            "type": "array"
+          },
+          "deployment_state": {
+            "const": "unknown_without_deployment_evidence",
+            "title": "Deployment State",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/OriginalEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "gaps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gaps",
+            "type": "array"
+          },
+          "graph": {
+            "$ref": "#/components/schemas/GraphResult"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RankedFragment"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "known_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Known At"
+          },
+          "time_basis": {
+            "const": "source_revision_and_knowledge_time",
+            "title": "Time Basis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "evidence",
+          "graph",
+          "degraded",
+          "gaps",
+          "auth_epoch",
+          "as_of",
+          "known_at",
+          "time_basis",
+          "deployment_state"
+        ],
+        "title": "SearchResult",
+        "type": "object"
+      },
+      "SourceRevision": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_revision": {
+            "title": "Source Revision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "source_revision"
+        ],
+        "title": "SourceRevision",
+        "type": "object"
+      },
+      "TimelineEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "known_at": {
+            "format": "date-time",
+            "title": "Known At",
+            "type": "string"
+          },
+          "page_id": {
+            "title": "Page Id",
+            "type": "string"
+          },
+          "publication_kind": {
+            "title": "Publication Kind",
+            "type": "string"
+          },
+          "revision_id": {
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "source_revisions": {
+            "items": {
+              "$ref": "#/components/schemas/SourceRevision"
+            },
+            "title": "Source Revisions",
+            "type": "array"
+          },
+          "state": {
+            "enum": [
+              "valid",
+              "stale",
+              "retracted"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page_id",
+          "revision_id",
+          "version",
+          "known_at",
+          "state",
+          "publication_kind",
+          "source_revisions"
+        ],
+        "title": "TimelineEvent",
+        "type": "object"
+      },
+      "TimelineRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "include_historical": {
+            "const": true,
+            "default": true,
+            "title": "Include Historical",
+            "type": "boolean"
+          },
+          "known_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Known At"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "page_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Page Ids",
+            "type": "array"
+          },
+          "space_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Space Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "space_ids",
+          "page_ids"
+        ],
+        "title": "TimelineRequest",
+        "type": "object"
+      },
+      "TimelineResult": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "auth_epoch": {
+            "title": "Auth Epoch",
+            "type": "integer"
+          },
+          "deployment_state": {
+            "const": "unknown_without_deployment_evidence",
+            "title": "Deployment State",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineEvent"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "time_basis": {
+            "const": "source_revision_and_knowledge_time",
+            "title": "Time Basis",
+            "type": "string"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "truncated",
+          "auth_epoch",
+          "time_basis",
+          "deployment_state"
+        ],
+        "title": "TimelineResult",
+        "type": "object"
+      },
+      "TraverseRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "include_historical": {
+            "default": false,
+            "title": "Include Historical",
+            "type": "boolean"
+          },
+          "known_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Known At"
+          },
+          "relation": {
+            "$ref": "#/components/schemas/Relations"
+          },
+          "seed_fragment_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Seed Fragment Ids",
+            "type": "array"
+          },
+          "space_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Space Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "space_ids",
+          "seed_fragment_ids"
+        ],
+        "title": "TraverseRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ServiceIdentity": {
+        "description": "Fresh per-caller Ed25519 workload JWT, target audience. Supplied only by the existing trusted transport.",
+        "in": "header",
+        "name": "X-Service-Token",
+        "type": "apiKey"
+      },
+      "UserBearer": {
+        "description": "Forward the original user/delegated bearer unchanged; the existing auth boundary performs current authorization. Generated operations never retain it.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "Knowledge Retrieval",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/search": {
+      "post": {
+        "operationId": "retrieval_post_api_v1_search",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Search",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.search",
+        "x-response-typing": "typed",
+        "x-service": "retrieval",
+        "x-source": "services/python/src/knowledge_platform/retrieval/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/timeline": {
+      "post": {
+        "operationId": "retrieval_post_api_v1_timeline",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimelineRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Timeline",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.timeline",
+        "x-response-typing": "typed",
+        "x-service": "retrieval",
+        "x-source": "services/python/src/knowledge_platform/retrieval/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/traverse": {
+      "post": {
+        "operationId": "retrieval_post_api_v1_traverse",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TraverseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Traverse",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.traverse",
+        "x-response-typing": "typed",
+        "x-service": "retrieval",
+        "x-source": "services/python/src/knowledge_platform/retrieval/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "retrieval_get_healthz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "service": {
+                      "const": "retrieval",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": "ok",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "service",
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [],
+        "summary": "Health",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.health",
+        "x-response-typing": "typed",
+        "x-service": "retrieval",
+        "x-source": "services/python/src/knowledge_platform/retrieval/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/search": {
+      "post": {
+        "operationId": "retrieval_post_internal_v1_search",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Search",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.search",
+        "x-response-typing": "typed",
+        "x-service": "retrieval",
+        "x-source": "services/python/src/knowledge_platform/retrieval/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/timeline": {
+      "post": {
+        "operationId": "retrieval_post_internal_v1_timeline",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimelineRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Timeline",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.timeline",
+        "x-response-typing": "typed",
+        "x-service": "retrieval",
+        "x-source": "services/python/src/knowledge_platform/retrieval/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/traverse": {
+      "post": {
+        "operationId": "retrieval_post_internal_v1_traverse",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TraverseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Traverse",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.traverse",
+        "x-response-typing": "typed",
+        "x-service": "retrieval",
+        "x-source": "services/python/src/knowledge_platform/retrieval/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "retrieval_get_readyz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "status": {
+                      "const": "ready",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [],
+        "summary": "Ready",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.ready",
+        "x-response-typing": "typed",
+        "x-service": "retrieval",
+        "x-source": "services/python/src/knowledge_platform/retrieval/app.py",
+        "x-transport": "http-json"
+      }
+    }
+  },
+  "x-contract-source": "runtime FastAPI routes and native Pydantic schemas",
+  "x-framework-routes": [],
+  "x-mounted-protocols": [],
+  "x-runtime-service-version": "1.0.0"
+}

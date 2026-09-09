@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "status": "preparing_unreviewed_cases",
+  "description": "Pinned public repositories for development evaluation; no human labels or model quality acceptance yet.",
+  "repositories": [
+    {
+      "id": "spring-petclinic",
+      "url": "https://github.com/spring-projects/spring-petclinic.git",
+      "commit": "818c4136ea971c21674525f9053de0d9c7ad8cfe",
+      "language": "java",
+      "tracked_files": 132,
+      "license": "Apache-2.0",
+      "license_path": "LICENSE.txt"
+    },
+    {
+      "id": "zod",
+      "url": "https://github.com/colinhacks/zod.git",
+      "commit": "804e0f522747345d6b37581888899be420baa3e9",
+      "language": "typescript",
+      "tracked_files": 722,
+      "license": "MIT",
+      "license_path": "LICENSE"
+    },
+    {
+      "id": "chi",
+      "url": "https://github.com/go-chi/chi.git",
+      "commit": "ae6be7469132cf471ca099d8c7bda4010c4ff7b2",
+      "language": "go",
+      "tracked_files": 105,
+      "license": "MIT",
+      "license_path": "LICENSE"
+    }
+  ]
+}

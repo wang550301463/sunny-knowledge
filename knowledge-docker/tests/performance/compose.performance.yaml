@@ -1,0 +1,42 @@
+# Use only in a freshly initialized sunny-perf-<random> project with pinned images.
+# All paths resolve relative to that project's base compose.yaml.
+services:
+  performance-git:
+    image: ${PERFORMANCE_REGRESSION_IMAGE:?resolve the regression image to sha256 first}
+    profiles: [test]
+    command: [python, /performance/fixture.py, --repositories, '${PERFORMANCE_REPOSITORIES:-100}', --symbols, '${PERFORMANCE_SYMBOLS:-340}']
+    volumes: [./tests/performance:/performance:ro]
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+  performance-model:
+    image: ${PERFORMANCE_REGRESSION_IMAGE:?resolve the regression image to sha256 first}
+    profiles: [test]
+    command: [python, /performance/model_provider.py, --dimensions, '${PERFORMANCE_DIMENSIONS:-1024}']
+    volumes: [./tests/performance:/performance:ro]
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  llm:
+    environment:
+      LLM_ALLOW_HTTP_PROVIDERS: 'true'
+  regression:
+    volumes:
+      - ./.env:/workspace/knowledge-docker/.env:ro
+      - ./.local:/workspace/knowledge-docker/.local
+      - ./scripts:/workspace/knowledge-docker/scripts:ro
+      - ./tests/performance:/workspace/knowledge-docker/tests/performance:ro

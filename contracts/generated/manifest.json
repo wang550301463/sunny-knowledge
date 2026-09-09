@@ -1,0 +1,27 @@
+{
+  "files": {
+    "contracts/generated/coverage.json": "e98e7c2298006060f588164c3b8e91b5786ef9197d69a2f5d7dfa04f96240b0e",
+    "contracts/generated/openapi/agent.json": "0c00d27c2f6d38b7746e1b29d97d93ca26ac1e9682572ebd0b2e022d47f55e48",
+    "contracts/generated/openapi/auth.json": "61a11130d56fa69f7176e247942b3f0f6f476c0016e75dc5eea8214a83f375dc",
+    "contracts/generated/openapi/channel.json": "4c14fec392f6d59c749159014ac4c4a96b494a10b0e0976560c96978d0bf260a",
+    "contracts/generated/openapi/gateway.json": "8a6dbc6ef011c161fa7a039a98d5ec19bff0897d2e53685bfe0fda9f9d70db0d",
+    "contracts/generated/openapi/graphiti.json": "3f58bd0a3783a49d5c24dae1b6368c39631fdfd8480d31eccf639c91a881e624",
+    "contracts/generated/openapi/iam.json": "d3222e944a22185df7e4adf0b56540628df75b52ff85ff9352b0655273e3121a",
+    "contracts/generated/openapi/ingest.json": "2ebb3837f475dd4893f93f642e994eebc3124d24c4738820d82d4b08fc82901e",
+    "contracts/generated/openapi/knowledge.json": "bfa1f91c89782135dbbde49445cab528efe2ea3de272041e39e053fdec5545dc",
+    "contracts/generated/openapi/llm.json": "6dbff198e778e535ea989668735b068996fb45d2c458fac4a2aeadcd0bf2be60",
+    "contracts/generated/openapi/mcp.json": "3ad37755d8447e4c31ef783d39c09c53cc950092ea964ca97f789627438c2780",
+    "contracts/generated/openapi/retrieval.json": "a44e594f02c2e7a3972a5039b02fb9e7bf072b09b4269fdcd4e0ac08273a7fef",
+    "contracts/generated/typescript/client.ts": "3c96774ac299a9c1c0944b94bcf167d041ba7a05dd8b001f6ac6ae701a3cce87",
+    "contracts/generated/typescript/operations.ts": "779c11e2a8ea3a08e6a23a54495858a7571c88b7871f4a3d7cbe3eeb9cbe38bc",
+    "contracts/generated/typescript/types.ts": "5b5ee14b3d3f091949bebdd9d4a37c8071630afdd1382fe9af2dd70eb3fa6584",
+    "services/go/internal/generatedcontracts/native/types.go": "ff5bdde473238c774b14c809295ccbadccfa68ec29b1a178475b3409ec57d00e",
+    "services/go/internal/generatedcontracts/operations.go": "fdf84d217aba8a9d60dafacb851f621f35f893cba117f6025af9869a8d11595e",
+    "services/python/src/knowledge_platform/generated_contracts/__init__.py": "3de1b3443b9f6baf5bba7928869b3e2faf2ca830e4236ba0033354309e35e325",
+    "services/python/src/knowledge_platform/generated_contracts/operations.py": "870e6ec3375b72b0d99f77be3a76a30e990fe91c774a9b1c2019b84be600084b",
+    "services/python/src/knowledge_platform/generated_contracts/types.py": "580e4ef3b4ba0f58565168a6930e06062d3c261cacaefcc9f224e0d12bc357df",
+    "web/src/generated-contracts/client.ts": "3c96774ac299a9c1c0944b94bcf167d041ba7a05dd8b001f6ac6ae701a3cce87",
+    "web/src/generated-contracts/operations.ts": "779c11e2a8ea3a08e6a23a54495858a7571c88b7871f4a3d7cbe3eeb9cbe38bc"
+  },
+  "generator_version": "1.0.0"
+}

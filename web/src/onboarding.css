@@ -1,0 +1,63 @@
+.onboarding-page {
+  max-width: 1160px;
+  margin: 0 auto;
+}
+.onboarding-page > .ant-steps {
+  margin-bottom: 24px;
+}
+.onboarding-page > .ant-alert {
+  margin-bottom: 16px;
+}
+.onboarding-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+.onboarding-cards > .ant-card {
+  scroll-margin-top: 84px;
+  min-width: 0;
+}
+.onboarding-cards .ant-card-head-title {
+  white-space: normal;
+}
+.onboarding-cards .ant-card-extra {
+  margin-left: 12px;
+}
+.onboarding-cards .ant-alert {
+  margin: 12px 0;
+}
+.onboarding-cards p {
+  margin: 12px 0;
+}
+.onboarding-cards li {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.onboarding-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 12px 0;
+  font-weight: 500;
+}
+.onboarding-field select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #ccd6df;
+  border-radius: 7px;
+  min-height: 38px;
+  padding: 6px 10px;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+.onboarding-field select:disabled {
+  background: #f5f7f9;
+  color: #8a929b;
+}
+@media (max-width: 1000px) {
+  .onboarding-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

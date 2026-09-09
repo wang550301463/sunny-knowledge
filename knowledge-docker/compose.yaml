@@ -1,0 +1,912 @@
+name: ${COMPOSE_PROJECT_NAME:-sunny-knowledge-v2}
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run scripts/init.py first}
+    volumes:
+    - postgres-data:/var/lib/postgresql/data
+    - ./.local/init-databases.sql:/docker-entrypoint-initdb.d/10-databases.sql:ro
+    ports:
+    - 127.0.0.1:${POSTGRES_PORT:-15439}:5432
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U postgres
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+    networks:
+    - backend
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.3
+    command:
+    - start-dev
+    - --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/knowledge_keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${DB_PASSWORD_KEYCLOAK:?}
+      KC_BOOTSTRAP_ADMIN_USERNAME: bootstrap
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?}
+      KC_HTTP_RELATIVE_PATH: /idp
+      KC_HOSTNAME: ${PUBLIC_WEB_URL:-http://localhost:18180}/idp
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: 'true'
+    volumes:
+    - ./.local/knowledge-realm.json:/opt/keycloak/data/import/knowledge-realm.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+    - backend
+  valkey:
+    image: valkey/valkey:8.1.3-alpine
+    command:
+    - valkey-server
+    - --appendonly
+    - 'yes'
+    volumes:
+    - valkey-data:/data
+    healthcheck:
+      test:
+      - CMD
+      - valkey-cli
+      - ping
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.3
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: 'false'
+      xpack.license.self_generated.type: basic
+      ES_JAVA_OPTS: -Xms1g -Xmx1g
+    volumes:
+    - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - curl -fsS http://localhost:9200/_cluster/health?wait_for_status=yellow >/dev/null
+      interval: 10s
+      timeout: 5s
+      retries: 40
+    mem_limit: 3g
+    restart: unless-stopped
+    networks:
+    - backend
+  neo4j:
+    image: neo4j:5.26.12-community
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?}
+      NEO4J_server_memory_heap_initial__size: 256m
+      NEO4J_server_memory_heap_max__size: 1G
+      NEO4J_server_memory_pagecache_size: 256m
+    volumes:
+    - neo4j-data:/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -q --spider http://localhost:7474 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+    networks:
+    - backend
+  seaweedfs:
+    image: chrislusf/seaweedfs:3.96
+    command:
+    - server
+    - -dir=/data
+    - -s3
+    - -s3.config=/etc/seaweedfs/s3.json
+    - -ip=seaweedfs
+    - -master.volumeSizeLimitMB=100
+    volumes:
+    - seaweedfs-data:/data
+    - ./.local/s3.json:/etc/seaweedfs/s3.json:ro
+    restart: unless-stopped
+    networks:
+    - backend
+  temporal:
+    image: temporalio/auto-setup:1.28.1
+    environment:
+      DB: postgres12
+      DB_PORT: '5432'
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: ${DB_PASSWORD_TEMPORAL:?}
+      POSTGRES_SEEDS: postgres
+      DBNAME: knowledge_temporal
+      VISIBILITY_DBNAME: knowledge_temporal_visibility
+      SKIP_DB_CREATE: 'true'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+    - backend
+  gateway:
+    image: sunny-knowledge/gateway:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Go.Dockerfile
+      args:
+        SERVICE_NAME: gateway
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: gateway
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      KEYCLOAK_PROXY_URL: http://keycloak:8080
+      WEB_URL: http://web:8080
+      VALKEY_URL: redis://valkey:6379/0
+      GATEWAY_PEER_LIMIT: ${GATEWAY_PEER_LIMIT:-600}
+      GATEWAY_IDP_LIMIT: ${GATEWAY_IDP_LIMIT:-120}
+      GATEWAY_PRINCIPAL_LIMIT: ${GATEWAY_PRINCIPAL_LIMIT:-300}
+      GATEWAY_LIMIT_WINDOW: ${GATEWAY_LIMIT_WINDOW:-1m}
+    volumes:
+    - ./.local/identities/gateway/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://localhost:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    ports:
+    - 127.0.0.1:${GATEWAY_PORT:-18180}:8080
+  iam:
+    image: sunny-knowledge/iam:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Go.Dockerfile
+      args:
+        SERVICE_NAME: iam
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: iam
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql://iam:${DB_PASSWORD_IAM:?}@postgres:5432/knowledge_iam
+      BOOTSTRAP_ADMIN_SUBJECT: ${BOOTSTRAP_ADMIN_SUBJECT:?}
+    volumes:
+    - ./.local/identities/iam/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://localhost:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  auth:
+    image: sunny-knowledge/auth:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Go.Dockerfile
+      args:
+        SERVICE_NAME: auth
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: auth
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql://auth:${DB_PASSWORD_AUTH:?}@postgres:5432/knowledge_auth
+      KEYCLOAK_ISSUER: ${PUBLIC_WEB_URL:-http://localhost:18180}/idp/realms/knowledge
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080/idp/realms/knowledge
+      KEYCLOAK_AUDIENCE: knowledge-api
+      CHANNEL_URL: http://channel:8080
+      AUTH_CHANNEL_DELEGATION_KEY_FILE: /run/knowledge/channel-delegation.pem
+    volumes:
+    - ./.local/identities/auth/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    - ./.local/delegation/auth-private.pem:/run/knowledge/channel-delegation.pem:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://localhost:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  channel:
+    image: sunny-knowledge/channel:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Go.Dockerfile
+      args:
+        SERVICE_NAME: channel
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: channel
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      CHANNEL_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      AGENT_URL: http://agent:8080
+      DATABASE_URL: postgresql://channel:${DB_PASSWORD_CHANNEL:?}@postgres:5432/knowledge_channel
+      CHANNEL_ENCRYPTION_KEY: ${CHANNEL_ENCRYPTION_KEY:?run init.py}
+    volumes:
+    - ./.local/identities/channel/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://localhost:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  knowledge:
+    image: sunny-knowledge/knowledge:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Python.Dockerfile
+      args: {}
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: knowledge
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      KNOWLEDGE_LIFECYCLE_PRINCIPAL_ID: ${KNOWLEDGE_LIFECYCLE_PRINCIPAL_ID:-}
+      KNOWLEDGE_ACCESS_WEB_CLIENT_IDS: ${KNOWLEDGE_ACCESS_WEB_CLIENT_IDS:-["knowledge-web"]}
+      KNOWLEDGE_ACCESS_WEB_AUDIENCES: ${KNOWLEDGE_ACCESS_WEB_AUDIENCES:-["knowledge-api","account"]}
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql+psycopg://knowledge:${DB_PASSWORD_KNOWLEDGE:?}@postgres:5432/knowledge_knowledge
+      S3_ENDPOINT_URL: http://seaweedfs:8333
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?}
+      S3_BUCKET: knowledge-raw
+    volumes:
+    - ./.local/identities/knowledge/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  ingest:
+    image: sunny-knowledge/ingest:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Python.Dockerfile
+      args:
+        INSTALL_GIT: 'true'
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: ingest
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql+psycopg://ingest:${DB_PASSWORD_INGEST:?}@postgres:5432/knowledge_ingest
+      INGEST_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:?}
+      INGEST_OIDC_TOKEN_URL: http://keycloak:8080/idp/realms/knowledge/protocol/openid-connect/token
+      INGEST_OIDC_CLIENT_ID: ${INGEST_OIDC_CLIENT_ID:?run init.py}
+      INGEST_OIDC_CLIENT_SECRET: ${INGEST_OIDC_CLIENT_SECRET:?run init.py}
+      INGEST_S3_ENDPOINT_URL: http://seaweedfs:8333
+      INGEST_S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?}
+      INGEST_S3_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?}
+      INGEST_S3_BUCKET: knowledge-raw
+      INGEST_TEMPORAL_ADDRESS: temporal:7233
+    volumes:
+    - ./.local/identities/ingest/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  retrieval:
+    image: sunny-knowledge/retrieval:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Python.Dockerfile
+      args: {}
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: retrieval
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql+psycopg://retrieval:${DB_PASSWORD_RETRIEVAL:?}@postgres:5432/knowledge_retrieval
+      RETRIEVAL_ES_URL: http://elasticsearch:9200
+      RETRIEVAL_ES_INDEX: ${RETRIEVAL_ES_INDEX:-knowledge-fragments-v2}
+      RETRIEVAL_EMBEDDING_CONFIGURATION_ID: ${RETRIEVAL_EMBEDDING_CONFIGURATION_ID:-}
+      RETRIEVAL_EMBEDDING_DIMENSIONS: ${RETRIEVAL_EMBEDDING_DIMENSIONS:-0}
+      RETRIEVAL_RERANK_CONFIGURATION_ID: ${RETRIEVAL_RERANK_CONFIGURATION_ID:-}
+      RETRIEVAL_OIDC_TOKEN_URL: http://keycloak:8080/idp/realms/knowledge/protocol/openid-connect/token
+      RETRIEVAL_OIDC_CLIENT_ID: ${RETRIEVAL_OIDC_CLIENT_ID:?run init.py}
+      RETRIEVAL_OIDC_CLIENT_SECRET: ${RETRIEVAL_OIDC_CLIENT_SECRET:?run init.py}
+    volumes:
+    - ./.local/identities/retrieval/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  llm:
+    image: sunny-knowledge/llm:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Python.Dockerfile
+      args: {}
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: llm
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql+psycopg://llm:${DB_PASSWORD_LLM:?}@postgres:5432/knowledge_llm
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:?}
+    volumes:
+    - ./.local/identities/llm/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  graphiti:
+    image: sunny-knowledge/graphiti:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Python.Dockerfile
+      args:
+        EXTRAS: graph
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: graphiti
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql+psycopg://graphiti:${DB_PASSWORD_GRAPHITI:?}@postgres:5432/knowledge_graphiti
+      GRAPHITI_NEO4J_URI: bolt://neo4j:7687
+      GRAPHITI_NEO4J_USER: neo4j
+      GRAPHITI_NEO4J_PASSWORD: ${NEO4J_PASSWORD:?}
+      GRAPHITI_NEO4J_DATABASE: neo4j
+      GRAPHITI_NAMESPACE: ${GRAPHITI_NAMESPACE:-knowledge-v2}
+      GRAPHITI_OIDC_TOKEN_URL: http://keycloak:8080/idp/realms/knowledge/protocol/openid-connect/token
+      GRAPHITI_OIDC_CLIENT_ID: ${GRAPHITI_OIDC_CLIENT_ID:?run init.py}
+      GRAPHITI_OIDC_CLIENT_SECRET: ${GRAPHITI_OIDC_CLIENT_SECRET:?run init.py}
+    volumes:
+    - ./.local/identities/graphiti/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  agent:
+    image: sunny-knowledge/agent:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Python.Dockerfile
+      args: {}
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: agent
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql+psycopg://agent:${DB_PASSWORD_AGENT:?}@postgres:5432/knowledge_agent
+      AGENT_ENCRYPTION_KEY: ${AGENT_ENCRYPTION_KEY:?run init.py}
+      AGENT_WORKER_CONCURRENCY: ${AGENT_WORKER_CONCURRENCY:-10}
+    volumes:
+    - ./.local/identities/agent/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  mcp:
+    image: sunny-knowledge/mcp:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Python.Dockerfile
+      args:
+        EXTRAS: mcp
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: mcp
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      MCP_RESOURCE_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}/mcp
+      MCP_ISSUER_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}/idp/realms/knowledge
+      MCP_ALLOWED_CLIENT_IDS: '${MCP_ALLOWED_CLIENT_IDS:-["knowledge-mcp"]}'
+      MCP_ALLOWED_ORIGINS: '${MCP_ALLOWED_ORIGINS:-[]}'
+    volumes:
+    - ./.local/identities/mcp/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  channel-worker:
+    image: sunny-knowledge/channel:v2-local
+    profiles: [app]
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    command: [--worker]
+    environment:
+      SERVICE_NAME: channel
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      AGENT_URL: http://agent:8080
+      CHANNEL_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql://channel:${DB_PASSWORD_CHANNEL:?}@postgres:5432/knowledge_channel
+      CHANNEL_ENCRYPTION_KEY: ${CHANNEL_ENCRYPTION_KEY:?run init.py}
+    volumes:
+    - ./.local/identities/channel/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    networks: [backend]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  agent-worker:
+    image: sunny-knowledge/agent:v2-local
+    profiles: [app]
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    command: [python, -m, knowledge_platform.agent.worker]
+    environment:
+      SERVICE_NAME: agent
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql+psycopg://agent:${DB_PASSWORD_AGENT:?}@postgres:5432/knowledge_agent
+      AGENT_ENCRYPTION_KEY: ${AGENT_ENCRYPTION_KEY:?run init.py}
+      AGENT_WORKER_CONCURRENCY: ${AGENT_WORKER_CONCURRENCY:-10}
+    volumes:
+    - ./.local/identities/agent/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    networks: [backend]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  go-regression:
+    image: sunny-knowledge/go-regression:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/GoRegression.Dockerfile
+    profiles:
+    - test
+    environment:
+      IAM_TEST_DATABASE_URL: postgresql://iam:${DB_PASSWORD_IAM:?}@postgres:5432/knowledge_iam
+      TEST_CHANNEL_DATABASE_URL: postgresql://channel:${DB_PASSWORD_CHANNEL:?}@postgres:5432/knowledge_channel
+      TEST_VALKEY_URL: redis://valkey:6379/0
+    networks:
+    - backend
+  regression:
+    image: sunny-knowledge/regression:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Regression.Dockerfile
+    profiles:
+    - test
+    environment:
+      REGRESSION_GATEWAY_URL: http://gateway:8080
+      TEST_DATABASE_URL: postgresql+psycopg://knowledge:${DB_PASSWORD_KNOWLEDGE:?}@postgres:5432/knowledge_knowledge
+      TEST_INGEST_DATABASE_URL: postgresql+psycopg://ingest:${DB_PASSWORD_INGEST:?}@postgres:5432/knowledge_ingest
+      TEST_LLM_DATABASE_URL: postgresql+psycopg://llm:${DB_PASSWORD_LLM:?}@postgres:5432/knowledge_llm
+      INGEST_S3_ENDPOINT_URL: http://seaweedfs:8333
+      INGEST_S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?}
+      INGEST_S3_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?}
+      INGEST_S3_BUCKET: knowledge-raw
+      INGEST_TEMPORAL_ADDRESS: temporal:7233
+      TEST_RETRIEVAL_DATABASE_URL: postgresql+psycopg://retrieval:${DB_PASSWORD_RETRIEVAL:?}@postgres:5432/knowledge_retrieval
+      RETRIEVAL_TEST_ES_URL: http://elasticsearch:9200
+      TEST_GRAPHITI_DATABASE_URL: postgresql+psycopg://graphiti:${DB_PASSWORD_GRAPHITI:?}@postgres:5432/knowledge_graphiti
+      TEST_AGENT_DATABASE_URL: postgresql+psycopg://agent:${DB_PASSWORD_AGENT:?}@postgres:5432/knowledge_agent
+      TEST_GRAPHITI_NEO4J_URI: bolt://neo4j:7687
+      TEST_GRAPHITI_NEO4J_PASSWORD: ${NEO4J_PASSWORD:?}
+    volumes:
+    - ./.local/test-env.json:/workspace/knowledge-docker/.local/test-env.json:ro
+    networks:
+    - backend
+  knowledge-lifecycle-worker:
+    image: sunny-knowledge/knowledge:v2-local
+    profiles: [lifecycle]
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    command: [python, -m, knowledge_platform.knowledge.lifecycle_worker]
+    environment:
+      SERVICE_NAME: knowledge
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      KNOWLEDGE_URL: http://knowledge:8080
+      KNOWLEDGE_LIFECYCLE_PRINCIPAL_ID: ${KNOWLEDGE_LIFECYCLE_PRINCIPAL_ID:-}
+      KNOWLEDGE_LIFECYCLE_SPACE_IDS: ${KNOWLEDGE_LIFECYCLE_SPACE_IDS:-[]}
+      KNOWLEDGE_LIFECYCLE_OIDC_TOKEN_URL: http://keycloak:8080/idp/realms/knowledge/protocol/openid-connect/token
+      KNOWLEDGE_LIFECYCLE_OIDC_CLIENT_ID: ${KNOWLEDGE_LIFECYCLE_OIDC_CLIENT_ID:-knowledge-lifecycle-worker}
+      KNOWLEDGE_LIFECYCLE_OIDC_CLIENT_SECRET: ${KNOWLEDGE_LIFECYCLE_OIDC_CLIENT_SECRET:-}
+      KNOWLEDGE_LIFECYCLE_TEMPORAL_ADDRESS: ${KNOWLEDGE_LIFECYCLE_TEMPORAL_ADDRESS:-temporal:7233}
+      KNOWLEDGE_LIFECYCLE_TEMPORAL_NAMESPACE: ${KNOWLEDGE_LIFECYCLE_TEMPORAL_NAMESPACE:-default}
+      KNOWLEDGE_LIFECYCLE_TASK_QUEUE: ${KNOWLEDGE_LIFECYCLE_TASK_QUEUE:-knowledge-lifecycle}
+    volumes:
+    - ./.local/identities/knowledge/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    networks: [backend]
+    depends_on:
+      knowledge:
+        condition: service_healthy
+      temporal:
+        condition: service_started
+      keycloak:
+        condition: service_started
+  ingest-worker:
+    image: sunny-knowledge/ingest:v2-local
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: ingest
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql+psycopg://ingest:${DB_PASSWORD_INGEST:?}@postgres:5432/knowledge_ingest
+      INGEST_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:?}
+      INGEST_OIDC_TOKEN_URL: http://keycloak:8080/idp/realms/knowledge/protocol/openid-connect/token
+      INGEST_OIDC_CLIENT_ID: ${INGEST_OIDC_CLIENT_ID:?run init.py}
+      INGEST_OIDC_CLIENT_SECRET: ${INGEST_OIDC_CLIENT_SECRET:?run init.py}
+      INGEST_S3_ENDPOINT_URL: http://seaweedfs:8333
+      INGEST_S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?}
+      INGEST_S3_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?}
+      INGEST_S3_BUCKET: knowledge-raw
+      INGEST_TEMPORAL_ADDRESS: temporal:7233
+    volumes:
+    - ./.local/identities/ingest/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      temporal:
+        condition: service_started
+      seaweedfs:
+        condition: service_started
+    command:
+    - python
+    - -m
+    - knowledge_platform.ingest.worker
+  retrieval-worker:
+    image: sunny-knowledge/retrieval:v2-local
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: retrieval
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql+psycopg://retrieval:${DB_PASSWORD_RETRIEVAL:?}@postgres:5432/knowledge_retrieval
+      RETRIEVAL_ES_URL: http://elasticsearch:9200
+      RETRIEVAL_ES_INDEX: ${RETRIEVAL_ES_INDEX:-knowledge-fragments-v2}
+      RETRIEVAL_EMBEDDING_CONFIGURATION_ID: ${RETRIEVAL_EMBEDDING_CONFIGURATION_ID:-}
+      RETRIEVAL_EMBEDDING_DIMENSIONS: ${RETRIEVAL_EMBEDDING_DIMENSIONS:-0}
+      RETRIEVAL_RERANK_CONFIGURATION_ID: ${RETRIEVAL_RERANK_CONFIGURATION_ID:-}
+      RETRIEVAL_OIDC_TOKEN_URL: http://keycloak:8080/idp/realms/knowledge/protocol/openid-connect/token
+      RETRIEVAL_OIDC_CLIENT_ID: ${RETRIEVAL_OIDC_CLIENT_ID:?run init.py}
+      RETRIEVAL_OIDC_CLIENT_SECRET: ${RETRIEVAL_OIDC_CLIENT_SECRET:?run init.py}
+    volumes:
+    - ./.local/identities/retrieval/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      llm:
+        condition: service_healthy
+      knowledge:
+        condition: service_healthy
+    command:
+    - python
+    - -m
+    - knowledge_platform.retrieval.worker
+  graphiti-worker:
+    image: sunny-knowledge/graphiti:v2-local
+    profiles:
+    - app
+    user: ${LOCAL_UID:-10001}:${LOCAL_GID:-10001}
+    environment:
+      SERVICE_NAME: graphiti
+      SERVICE_PRIVATE_KEY_FILE: /run/knowledge/private.pem
+      SERVICE_PUBLIC_KEYS_FILE: /run/knowledge/public-keys.json
+      AUTH_URL: http://auth:8080
+      IAM_URL: http://iam:8080
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:18180}
+      DATABASE_URL: postgresql+psycopg://graphiti:${DB_PASSWORD_GRAPHITI:?}@postgres:5432/knowledge_graphiti
+      GRAPHITI_NEO4J_URI: bolt://neo4j:7687
+      GRAPHITI_NEO4J_USER: neo4j
+      GRAPHITI_NEO4J_PASSWORD: ${NEO4J_PASSWORD:?}
+      GRAPHITI_NEO4J_DATABASE: neo4j
+      GRAPHITI_NAMESPACE: ${GRAPHITI_NAMESPACE:-knowledge-v2}
+      GRAPHITI_OIDC_TOKEN_URL: http://keycloak:8080/idp/realms/knowledge/protocol/openid-connect/token
+      GRAPHITI_OIDC_CLIENT_ID: ${GRAPHITI_OIDC_CLIENT_ID:?run init.py}
+      GRAPHITI_OIDC_CLIENT_SECRET: ${GRAPHITI_OIDC_CLIENT_SECRET:?run init.py}
+    volumes:
+    - ./.local/identities/graphiti/private.pem:/run/knowledge/private.pem:ro
+    - ./.local/service-public-keys.json:/run/knowledge/public-keys.json:ro
+    read_only: true
+    tmpfs:
+    - /tmp
+    restart: unless-stopped
+    networks:
+    - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      knowledge:
+        condition: service_healthy
+    command:
+    - python
+    - -m
+    - knowledge_platform.graphiti.worker
+  web:
+    image: sunny-knowledge/web:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/Web.Dockerfile
+    profiles:
+    - app
+    user: 101:101
+    read_only: true
+    tmpfs:
+    - /tmp
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://127.0.0.1:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+    - backend
+  web-regression:
+    image: sunny-knowledge/web-regression:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/WebRegression.Dockerfile
+    profiles:
+    - test
+    init: true
+    shm_size: 1gb
+    networks:
+    - backend
+    volumes:
+    - ./.local/test-env.json:/run/knowledge/test-env.json:ro
+    - ./artifacts:/artifacts
+networks:
+  backend:
+    driver: bridge
+volumes:
+  postgres-data: null
+  valkey-data: null
+  elasticsearch-data: null
+  neo4j-data: null
+  seaweedfs-data: null

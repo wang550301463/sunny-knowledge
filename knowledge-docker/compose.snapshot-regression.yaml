@@ -1,0 +1,8 @@
+# Explicit raw-store backup/restore regression. It creates only random owned buckets.
+services:
+  regression:
+    environment:
+      SNAPSHOT_REAL_S3: 'true'
+    volumes:
+      - ./scripts/snapshot_store.py:/workspace/knowledge-docker/scripts/snapshot_store.py:ro
+      - ./tests/test_snapshot_store.py:/workspace/knowledge-docker/tests/test_snapshot_store.py:ro

@@ -1,0 +1,34 @@
+# Explicit WeCom protocol simulation; never supply real bot credentials.
+# Stack with compose.agent-regression.yaml for the existing synthetic Chat model.
+services:
+  wecom-provider:
+    image: sunny-knowledge/regression:v2-local
+    profiles: [test]
+    command: [python, /fixture/server.py]
+    volumes:
+      - ./tests/wecom_provider:/fixture:ro
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/healthz')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  channel-worker:
+    network_mode: service:wecom-provider
+    networks: !reset []
+    environment:
+      CHANNEL_WS_URL: ws://127.0.0.1:8765
+      CHANNEL_ALLOW_LOOPBACK_WS: 'true'
+    depends_on:
+      wecom-provider:
+        condition: service_healthy
+  regression:
+    environment:
+      CHANNEL_FIXTURE_URL: http://wecom-provider:8765
+    volumes:
+      - ./tests/wecom_provider:/workspace/knowledge-docker/tests/wecom_provider:ro
+      - ./tests/channel_http:/workspace/knowledge-docker/tests/channel_http:ro

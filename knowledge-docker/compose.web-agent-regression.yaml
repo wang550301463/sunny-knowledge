@@ -1,0 +1,25 @@
+# Real Chromium and deployed application APIs; only model output is protocol simulation.
+# Combine with compose.agent-regression.yaml. No browser request interception.
+services:
+  web-agent-regression:
+    image: sunny-knowledge/web-regression:v2-local
+    build:
+      context: ..
+      dockerfile: knowledge-docker/WebRegression.Dockerfile
+    profiles: [test]
+    init: true
+    shm_size: 1gb
+    command: [npx, playwright, test, --config, /tests/web_agent/playwright.config.js]
+    networks: [backend]
+    volumes:
+      - ./.local/test-env.json:/run/knowledge/test-env.json:ro
+      - ./tests/web:/tests/web:ro
+      - ./tests/web_agent:/tests/web_agent:ro
+      - ./artifacts:/artifacts
+  web-channel-result-regression:
+    extends:
+      service: web-agent-regression
+    environment:
+      WEB_CHANNEL_RESULT_ONLY: 'true'
+    volumes:
+      - ./.local/web-channel-browser:/run/channel-fixture

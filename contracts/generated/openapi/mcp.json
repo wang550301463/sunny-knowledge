@@ -1,0 +1,910 @@
+{
+  "components": {
+    "schemas": {
+      "JsonValue": {},
+      "ProtectedResourceMetadata": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "authorization_servers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Authorization Servers",
+            "type": "array"
+          },
+          "bearer_methods_supported": {
+            "items": {
+              "const": "header",
+              "type": "string"
+            },
+            "title": "Bearer Methods Supported",
+            "type": "array"
+          },
+          "resource": {
+            "title": "Resource",
+            "type": "string"
+          },
+          "resource_name": {
+            "title": "Resource Name",
+            "type": "string"
+          },
+          "scopes_supported": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scopes Supported",
+            "type": "array"
+          }
+        },
+        "required": [
+          "resource",
+          "authorization_servers",
+          "scopes_supported",
+          "bearer_methods_supported",
+          "resource_name"
+        ],
+        "title": "ProtectedResourceMetadata",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ServiceIdentity": {
+        "description": "Fresh per-caller Ed25519 workload JWT, target audience. Supplied only by the existing trusted transport.",
+        "in": "header",
+        "name": "X-Service-Token",
+        "type": "apiKey"
+      },
+      "UserBearer": {
+        "description": "Forward the original user/delegated bearer unchanged; the existing auth boundary performs current authorization. Generated operations never retain it.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "Knowledge MCP",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/.well-known/oauth-protected-resource": {
+      "get": {
+        "operationId": "mcp_get_well_known_oauth_protected_resource",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtectedResourceMetadata"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Metadata",
+        "x-handler": "create_app.<locals>.metadata",
+        "x-response-typing": "typed",
+        "x-service": "mcp",
+        "x-source": "services/python/src/knowledge_platform/mcp/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/.well-known/oauth-protected-resource/mcp": {
+      "get": {
+        "operationId": "mcp_get_well_known_oauth_protected_resource_mcp",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtectedResourceMetadata"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Metadata",
+        "x-handler": "create_app.<locals>.metadata",
+        "x-response-typing": "typed",
+        "x-service": "mcp",
+        "x-source": "services/python/src/knowledge_platform/mcp/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "mcp_get_healthz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "service": {
+                      "const": "mcp",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": "ok",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "service",
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Health",
+        "x-handler": "create_app.<locals>.health",
+        "x-response-typing": "typed",
+        "x-service": "mcp",
+        "x-source": "services/python/src/knowledge_platform/mcp/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "mcp_get_readyz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "service": {
+                      "const": "mcp",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": "ok",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "service",
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [],
+        "summary": "Health",
+        "x-handler": "create_app.<locals>.health",
+        "x-response-typing": "typed",
+        "x-service": "mcp",
+        "x-source": "services/python/src/knowledge_platform/mcp/app.py",
+        "x-transport": "http-json"
+      }
+    }
+  },
+  "x-contract-source": "runtime FastAPI routes and native Pydantic schemas",
+  "x-framework-routes": [],
+  "x-mcp-tools": {
+    "ask": {
+      "inputSchema": {
+        "$defs": {
+          "CreateSession": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "const": "create_session",
+                "title": "Operation",
+                "type": "string"
+              },
+              "title": {
+                "default": "MCP conversation",
+                "maxLength": 160,
+                "minLength": 1,
+                "title": "Title",
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "title": "CreateSession",
+            "type": "object"
+          },
+          "ReadRun": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "enum": [
+                  "get",
+                  "cancel"
+                ],
+                "title": "Operation",
+                "type": "string"
+              },
+              "run_id": {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$",
+                "title": "Run Id",
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation",
+              "run_id"
+            ],
+            "title": "ReadRun",
+            "type": "object"
+          },
+          "StartRun": {
+            "additionalProperties": false,
+            "properties": {
+              "agent_id": {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$",
+                "title": "Agent Id",
+                "type": "string"
+              },
+              "as_of": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "As Of"
+              },
+              "configuration_id": {
+                "anyOf": [
+                  {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9_.:-]+$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Configuration Id"
+              },
+              "idempotency_key": {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$",
+                "title": "Idempotency Key",
+                "type": "string"
+              },
+              "known_at": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Known At"
+              },
+              "operation": {
+                "const": "start",
+                "title": "Operation",
+                "type": "string"
+              },
+              "question": {
+                "maxLength": 8192,
+                "minLength": 1,
+                "title": "Question",
+                "type": "string"
+              },
+              "session_id": {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$",
+                "title": "Session Id",
+                "type": "string"
+              },
+              "space_ids": {
+                "items": {
+                  "maxLength": 256,
+                  "minLength": 1,
+                  "pattern": "^[A-Za-z0-9_.:-]+$",
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "minItems": 1,
+                "title": "Space Ids",
+                "type": "array"
+              }
+            },
+            "required": [
+              "operation",
+              "agent_id",
+              "session_id",
+              "question",
+              "space_ids",
+              "idempotency_key"
+            ],
+            "title": "StartRun",
+            "type": "object"
+          }
+        },
+        "anyOf": [
+          {
+            "$ref": "#/$defs/CreateSession"
+          },
+          {
+            "$ref": "#/$defs/StartRun"
+          },
+          {
+            "$ref": "#/$defs/ReadRun"
+          }
+        ],
+        "type": "object"
+      },
+      "outputTyping": "native SDK CallToolResult with domain result; not a REST response"
+    },
+    "feedback": {
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Comment",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "rating": {
+            "enum": [
+              "helpful",
+              "unhelpful",
+              "incorrect"
+            ],
+            "title": "Rating",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "rating",
+          "idempotency_key"
+        ],
+        "title": "Feedback",
+        "type": "object"
+      },
+      "outputTyping": "native SDK CallToolResult with domain result; not a REST response"
+    },
+    "get": {
+      "inputSchema": {
+        "$defs": {
+          "EvidenceRef": {
+            "additionalProperties": false,
+            "properties": {
+              "end_line": {
+                "minimum": 1,
+                "title": "End Line",
+                "type": "integer"
+              },
+              "kind": {
+                "enum": [
+                  "code",
+                  "markdown",
+                  "ticket",
+                  "policy",
+                  "source_manifest"
+                ],
+                "title": "Kind",
+                "type": "string"
+              },
+              "path": {
+                "maxLength": 2048,
+                "minLength": 1,
+                "title": "Path",
+                "type": "string"
+              },
+              "resource_id": {
+                "maxLength": 512,
+                "minLength": 1,
+                "title": "Resource Id",
+                "type": "string"
+              },
+              "revision_id": {
+                "maxLength": 512,
+                "minLength": 1,
+                "title": "Revision Id",
+                "type": "string"
+              },
+              "source_id": {
+                "maxLength": 512,
+                "minLength": 1,
+                "title": "Source Id",
+                "type": "string"
+              },
+              "source_revision": {
+                "maxLength": 512,
+                "minLength": 1,
+                "title": "Source Revision",
+                "type": "string"
+              },
+              "start_line": {
+                "minimum": 1,
+                "title": "Start Line",
+                "type": "integer"
+              },
+              "valid_from": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Valid From"
+              },
+              "valid_until": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Valid Until"
+              }
+            },
+            "required": [
+              "resource_id",
+              "revision_id",
+              "source_id",
+              "source_revision",
+              "path",
+              "start_line",
+              "end_line",
+              "kind"
+            ],
+            "title": "EvidenceRef",
+            "type": "object"
+          },
+          "GetEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "evidence": {
+                "$ref": "#/$defs/EvidenceRef"
+              },
+              "operation": {
+                "const": "evidence",
+                "title": "Operation",
+                "type": "string"
+              }
+            },
+            "required": [
+              "operation",
+              "evidence"
+            ],
+            "title": "GetEvidence",
+            "type": "object"
+          },
+          "GetPage": {
+            "additionalProperties": false,
+            "properties": {
+              "operation": {
+                "const": "page",
+                "default": "page",
+                "title": "Operation",
+                "type": "string"
+              },
+              "page_id": {
+                "maxLength": 512,
+                "minLength": 1,
+                "title": "Page Id",
+                "type": "string"
+              },
+              "revision_id": {
+                "anyOf": [
+                  {
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Revision Id"
+              }
+            },
+            "required": [
+              "page_id"
+            ],
+            "title": "GetPage",
+            "type": "object"
+          }
+        },
+        "anyOf": [
+          {
+            "$ref": "#/$defs/GetPage"
+          },
+          {
+            "$ref": "#/$defs/GetEvidence"
+          }
+        ],
+        "type": "object"
+      },
+      "outputTyping": "native SDK CallToolResult with domain result; not a REST response"
+    },
+    "search": {
+      "inputSchema": {
+        "$defs": {
+          "Relations": {
+            "additionalProperties": false,
+            "properties": {
+              "direction": {
+                "default": "outgoing",
+                "enum": [
+                  "outgoing",
+                  "incoming",
+                  "both"
+                ],
+                "title": "Direction",
+                "type": "string"
+              },
+              "hops": {
+                "default": 1,
+                "maximum": 2,
+                "minimum": 1,
+                "title": "Hops",
+                "type": "integer"
+              },
+              "types": {
+                "items": {
+                  "enum": [
+                    "depends_on",
+                    "uses",
+                    "owns",
+                    "cites",
+                    "governed_by",
+                    "caused",
+                    "fixed",
+                    "supersedes",
+                    "contradicts"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 9,
+                "minItems": 1,
+                "title": "Types",
+                "type": "array"
+              }
+            },
+            "title": "Relations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "As Of"
+          },
+          "include_historical": {
+            "default": false,
+            "title": "Include Historical",
+            "type": "boolean"
+          },
+          "known_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Known At"
+          },
+          "limit": {
+            "default": 12,
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 8192,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Relations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "space_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Space Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "space_ids",
+          "query"
+        ],
+        "title": "Search",
+        "type": "object"
+      },
+      "outputTyping": "native SDK CallToolResult with domain result; not a REST response"
+    },
+    "timeline": {
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "As Of"
+          },
+          "include_historical": {
+            "const": true,
+            "default": true,
+            "title": "Include Historical",
+            "type": "boolean"
+          },
+          "known_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Known At"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "page_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Page Ids",
+            "type": "array"
+          },
+          "space_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Space Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "space_ids",
+          "page_ids"
+        ],
+        "title": "Timeline",
+        "type": "object"
+      },
+      "outputTyping": "native SDK CallToolResult with domain result; not a REST response"
+    },
+    "traverse": {
+      "inputSchema": {
+        "$defs": {
+          "Relations": {
+            "additionalProperties": false,
+            "properties": {
+              "direction": {
+                "default": "outgoing",
+                "enum": [
+                  "outgoing",
+                  "incoming",
+                  "both"
+                ],
+                "title": "Direction",
+                "type": "string"
+              },
+              "hops": {
+                "default": 1,
+                "maximum": 2,
+                "minimum": 1,
+                "title": "Hops",
+                "type": "integer"
+              },
+              "types": {
+                "items": {
+                  "enum": [
+                    "depends_on",
+                    "uses",
+                    "owns",
+                    "cites",
+                    "governed_by",
+                    "caused",
+                    "fixed",
+                    "supersedes",
+                    "contradicts"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 9,
+                "minItems": 1,
+                "title": "Types",
+                "type": "array"
+              }
+            },
+            "title": "Relations",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "As Of"
+          },
+          "include_historical": {
+            "default": false,
+            "title": "Include Historical",
+            "type": "boolean"
+          },
+          "known_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Known At"
+          },
+          "relation": {
+            "$ref": "#/$defs/Relations"
+          },
+          "seed_fragment_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Seed Fragment Ids",
+            "type": "array"
+          },
+          "space_ids": {
+            "items": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Space Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "space_ids",
+          "seed_fragment_ids"
+        ],
+        "title": "Traverse",
+        "type": "object"
+      },
+      "outputTyping": "native SDK CallToolResult with domain result; not a REST response"
+    }
+  },
+  "x-mounted-protocols": [
+    {
+      "methods": [
+        "DELETE",
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "path": "/mcp",
+      "protocol": "mcp-streamable-http",
+      "schema_source": "MCP SDK and knowledge_platform.mcp.schemas; JSON-RPC methods are not REST operations"
+    }
+  ],
+  "x-runtime-service-version": "2.0.0"
+}

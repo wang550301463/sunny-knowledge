@@ -1,0 +1,30 @@
+# Explicit protocol simulation only. No real provider or relevance-quality claim.
+services:
+  model-provider:
+    image: sunny-knowledge/regression:v2-local
+    profiles: [test]
+    command: [python, knowledge-docker/tests/model_provider/server.py]
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  llm:
+    environment:
+      LLM_ALLOW_HTTP_PROVIDERS: 'true'
+  retrieval:
+    environment: &retrieval-test-models
+      DATABASE_URL: ${RETRIEVAL_REGRESSION_DATABASE_URL:-postgresql+psycopg://retrieval:${DB_PASSWORD_RETRIEVAL:?}@postgres:5432/knowledge_retrieval}
+      RETRIEVAL_ES_INDEX: ${REGRESSION_ES_INDEX:-knowledge-retrieval-protocol-unconfigured}
+      RETRIEVAL_EMBEDDING_CONFIGURATION_ID: ${REGRESSION_EMBEDDING_CONFIGURATION_ID:-}
+      RETRIEVAL_EMBEDDING_DIMENSIONS: '8'
+      RETRIEVAL_RERANK_CONFIGURATION_ID: ${REGRESSION_RERANK_CONFIGURATION_ID:-}
+      RETRIEVAL_POLL_SECONDS: '0.1'
+  retrieval-worker:
+    environment: *retrieval-test-models
+  regression:
+    volumes:
+      - ./.local/retrieval-regression.json:/workspace/knowledge-docker/.local/retrieval-regression.json:ro

@@ -1,0 +1,97 @@
+{
+  "notes": [
+    "Generated operations preserve the existing transport authorization boundary. Schema types do not replace native validators.",
+    "MCP JSON-RPC tools are under x-mcp-tools; they are not REST paths.",
+    "Unknown response shapes intentionally have no response type alias; receive the existing raw HTTP response.",
+    "Go exports JSON shape, while imperative validation stays authoritative. Go aliases reuse native declarations."
+  ],
+  "services": {
+    "agent": {
+      "operations": 38,
+      "response_typing": {
+        "stream": 3,
+        "text": 1,
+        "typed": 34
+      }
+    },
+    "auth": {
+      "operations": 6,
+      "response_typing": {
+        "typed": 6
+      }
+    },
+    "channel": {
+      "operations": 16,
+      "response_typing": {
+        "typed": 16
+      }
+    },
+    "gateway": {
+      "operations": 100,
+      "response_typing": {
+        "empty": 6,
+        "stream": 1,
+        "text": 1,
+        "typed": 92
+      }
+    },
+    "graphiti": {
+      "operations": 4,
+      "response_typing": {
+        "typed": 4
+      }
+    },
+    "iam": {
+      "operations": 39,
+      "response_typing": {
+        "empty": 6,
+        "typed": 33
+      }
+    },
+    "ingest": {
+      "operations": 13,
+      "response_typing": {
+        "typed": 13
+      }
+    },
+    "knowledge": {
+      "operations": 29,
+      "response_typing": {
+        "typed": 29
+      }
+    },
+    "llm": {
+      "operations": 17,
+      "response_typing": {
+        "typed": 17
+      }
+    },
+    "mcp": {
+      "operations": 4,
+      "response_typing": {
+        "typed": 4
+      }
+    },
+    "retrieval": {
+      "operations": 8,
+      "response_typing": {
+        "typed": 8
+      }
+    }
+  },
+  "stream_operations": [
+    "agent_get_api_v1_runs_by_run_id_events",
+    "agent_get_internal_v1_channel_runs_by_run_id_events",
+    "agent_get_internal_v1_runs_by_run_id_events",
+    "gateway_get_api_v1_runs_by_run_id_events",
+    "llm_post_internal_v1_chat"
+  ],
+  "unrouted_public_routes": [
+    {
+      "path": "/api/v1/graph/traverse",
+      "service": "graphiti"
+    }
+  ],
+  "untyped_responses": [],
+  "version": "1.0.0"
+}

@@ -1,0 +1,4980 @@
+{
+  "components": {
+    "schemas": {
+      "AgentAudit": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgentAuditEvent"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "AgentAudit",
+        "type": "object"
+      },
+      "AgentAuditEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "configuration_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Configuration Id"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "actor",
+          "action",
+          "configuration_id",
+          "created_at"
+        ],
+        "title": "AgentAuditEvent",
+        "type": "object"
+      },
+      "AgentConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "$ref": "#/components/schemas/Budget"
+          },
+          "max_output_tokens": {
+            "default": 2048,
+            "maximum": 8192.0,
+            "minimum": 128.0,
+            "title": "Max Output Tokens",
+            "type": "integer"
+          },
+          "mode": {
+            "default": "knowledge_qa",
+            "enum": [
+              "knowledge_qa",
+              "dependency_impact",
+              "incident_history",
+              "maintenance"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "model_configuration_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Configuration Id"
+          },
+          "prompt": {
+            "default": "",
+            "maxLength": 8000,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "space_ids": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.:-]+$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Space Ids",
+            "type": "array"
+          },
+          "tool_space_ids": {
+            "additionalProperties": {
+              "items": {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "propertyNames": {
+              "enum": [
+                "search",
+                "get",
+                "traverse",
+                "timeline",
+                "feedback",
+                "propose_revision"
+              ]
+            },
+            "title": "Tool Space Ids",
+            "type": "object"
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "search",
+                    "get",
+                    "traverse",
+                    "timeline",
+                    "feedback",
+                    "propose_revision"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools"
+          }
+        },
+        "required": [
+          "space_ids"
+        ],
+        "title": "AgentConfig",
+        "type": "object"
+      },
+      "AgentCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/AgentConfig"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "owner_space_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Owner Space Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "owner_space_id",
+          "config"
+        ],
+        "title": "AgentCreate",
+        "type": "object"
+      },
+      "AgentDefinition": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/VisibleAgentConfig"
+          },
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "owner_space_id": {
+            "title": "Owner Space Id",
+            "type": "string"
+          },
+          "published_configuration_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Configuration Id"
+          },
+          "shared": {
+            "title": "Shared",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "configuration_id",
+          "version",
+          "name",
+          "description",
+          "owner_space_id",
+          "created_by",
+          "shared",
+          "published_configuration_id",
+          "config",
+          "created_at"
+        ],
+        "title": "AgentDefinition",
+        "type": "object"
+      },
+      "AgentList": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgentDefinition"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "AgentList",
+        "type": "object"
+      },
+      "AgentModelOption": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "capabilities": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Capabilities",
+            "type": "object"
+          },
+          "capability": {
+            "const": "chat",
+            "title": "Capability",
+            "type": "string"
+          },
+          "configuration_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Configuration Id"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "provider_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Model"
+          },
+          "state": {
+            "const": "active",
+            "title": "State",
+            "type": "string"
+          },
+          "test_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test State"
+          }
+        },
+        "required": [
+          "capability",
+          "state"
+        ],
+        "title": "AgentModelOption",
+        "type": "object"
+      },
+      "AgentModelOptions": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgentModelOption"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "AgentModelOptions",
+        "type": "object"
+      },
+      "AgentPreset": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "id": {
+            "enum": [
+              "knowledge_qa",
+              "dependency_impact",
+              "incident_history",
+              "maintenance"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "instruction": {
+            "title": "Instruction",
+            "type": "string"
+          },
+          "model_configuration_id": {
+            "title": "Model Configuration Id",
+            "type": "null"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "tools": {
+            "items": {
+              "enum": [
+                "search",
+                "get",
+                "traverse",
+                "timeline",
+                "feedback",
+                "propose_revision"
+              ],
+              "type": "string"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "tools",
+          "instruction",
+          "model_configuration_id"
+        ],
+        "title": "AgentPreset",
+        "type": "object"
+      },
+      "AgentPresets": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgentPreset"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "AgentPresets",
+        "type": "object"
+      },
+      "AgentPublication": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "published_configuration_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Configuration Id"
+          },
+          "shared": {
+            "title": "Shared",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "configuration_id",
+          "published_configuration_id",
+          "shared"
+        ],
+        "title": "AgentPublication",
+        "type": "object"
+      },
+      "AgentRunView": {
+        "discriminator": {
+          "mapping": {
+            "False": "#/components/schemas/VisibleRun",
+            "True": "#/components/schemas/HiddenRun"
+          },
+          "propertyName": "content_hidden"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/HiddenRun"
+          },
+          {
+            "$ref": "#/components/schemas/VisibleRun"
+          }
+        ],
+        "title": "AgentRunView"
+      },
+      "AgentUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "base_configuration_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Base Configuration Id",
+            "type": "string"
+          },
+          "config": {
+            "$ref": "#/components/schemas/AgentConfig"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_configuration_id",
+          "name",
+          "config"
+        ],
+        "title": "AgentUpdate",
+        "type": "object"
+      },
+      "AgentVersions": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgentDefinition"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "AgentVersions",
+        "type": "object"
+      },
+      "Answer": {
+        "additionalProperties": false,
+        "properties": {
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/CitationClaim"
+            },
+            "maxItems": 24,
+            "title": "Facts",
+            "type": "array"
+          },
+          "gaps": {
+            "items": {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Gaps",
+            "type": "array"
+          },
+          "inferences": {
+            "items": {
+              "$ref": "#/components/schemas/CitationClaim"
+            },
+            "maxItems": 24,
+            "title": "Inferences",
+            "type": "array"
+          }
+        },
+        "required": [
+          "facts",
+          "inferences",
+          "gaps"
+        ],
+        "title": "Answer",
+        "type": "object"
+      },
+      "AnswerBlock": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "citation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "index": {
+            "minimum": 0.0,
+            "title": "Index",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "fact",
+              "inference",
+              "gap"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "kind",
+          "text",
+          "citation_ids"
+        ],
+        "title": "AnswerBlock",
+        "type": "object"
+      },
+      "AnswerBlockEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AnswerBlock"
+          },
+          "seq": {
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "answer_block",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "type",
+          "data"
+        ],
+        "title": "AnswerBlockEvent",
+        "type": "object"
+      },
+      "Budget": {
+        "additionalProperties": false,
+        "properties": {
+          "model_rounds": {
+            "default": 8,
+            "maximum": 8.0,
+            "minimum": 1.0,
+            "title": "Model Rounds",
+            "type": "integer"
+          },
+          "parallel_reads": {
+            "default": 2,
+            "maximum": 2.0,
+            "minimum": 1.0,
+            "title": "Parallel Reads",
+            "type": "integer"
+          },
+          "seconds": {
+            "default": 180,
+            "maximum": 180.0,
+            "minimum": 1.0,
+            "title": "Seconds",
+            "type": "integer"
+          },
+          "tool_calls": {
+            "default": 20,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Tool Calls",
+            "type": "integer"
+          }
+        },
+        "title": "Budget",
+        "type": "object"
+      },
+      "CancelledConversation": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "cancelled": {
+            "title": "Cancelled",
+            "type": "boolean"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          }
+        },
+        "required": [
+          "cancelled"
+        ],
+        "title": "CancelledConversation",
+        "type": "object"
+      },
+      "ChannelQuestion": {
+        "additionalProperties": false,
+        "properties": {
+          "question": {
+            "maxLength": 8192,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "ChannelQuestion",
+        "type": "object"
+      },
+      "Citation": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "evidence": {
+            "$ref": "#/components/schemas/EvidenceRef"
+          },
+          "excerpt": {
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "page_id": {
+            "title": "Page Id",
+            "type": "string"
+          },
+          "revision_id": {
+            "description": "Wiki revision ID, distinct from evidence.revision_id (source snapshot ID).",
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "space_id": {
+            "title": "Space Id",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "page_id",
+          "revision_id",
+          "space_id",
+          "evidence",
+          "excerpt",
+          "url"
+        ],
+        "title": "Citation",
+        "type": "object"
+      },
+      "CitationClaim": {
+        "additionalProperties": false,
+        "properties": {
+          "citation_ids": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.:-]+$",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "text": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "citation_ids"
+        ],
+        "title": "CitationClaim",
+        "type": "object"
+      },
+      "CitationSnapshot": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_revision": {
+            "title": "Source Revision",
+            "type": "string"
+          },
+          "space_id": {
+            "title": "Space Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "source_revision",
+          "resource_id",
+          "space_id",
+          "path",
+          "kind",
+          "text",
+          "sha256"
+        ],
+        "title": "CitationSnapshot",
+        "type": "object"
+      },
+      "ClearedConversation": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "cleared": {
+            "const": true,
+            "title": "Cleared",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cleared"
+        ],
+        "title": "ClearedConversation",
+        "type": "object"
+      },
+      "ClearedSession": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "cleared": {
+            "const": true,
+            "title": "Cleared",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "cleared"
+        ],
+        "title": "ClearedSession",
+        "type": "object"
+      },
+      "CompletedData": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "run": {
+            "$ref": "#/components/schemas/AgentRunView"
+          },
+          "status": {
+            "enum": [
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "error_code",
+          "run"
+        ],
+        "title": "CompletedData",
+        "type": "object"
+      },
+      "CompletedEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CompletedData"
+          },
+          "seq": {
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "completed",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "type",
+          "data"
+        ],
+        "title": "CompletedEvent",
+        "type": "object"
+      },
+      "ContextData": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "omitted_history": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Omitted History",
+            "type": "object"
+          }
+        },
+        "required": [
+          "omitted_history"
+        ],
+        "title": "ContextData",
+        "type": "object"
+      },
+      "ContextEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ContextData"
+          },
+          "seq": {
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "context_ready",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "type",
+          "data"
+        ],
+        "title": "ContextEvent",
+        "type": "object"
+      },
+      "DomainErrorEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "EmptyData": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {},
+        "title": "EmptyData",
+        "type": "object"
+      },
+      "EvidenceRef": {
+        "additionalProperties": false,
+        "properties": {
+          "end_line": {
+            "minimum": 1.0,
+            "title": "End Line",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "code",
+              "markdown",
+              "ticket",
+              "policy",
+              "source_manifest"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "path": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "resource_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "revision_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Revision Id",
+            "type": "string"
+          },
+          "source_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_revision": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Source Revision",
+            "type": "string"
+          },
+          "start_line": {
+            "minimum": 1.0,
+            "title": "Start Line",
+            "type": "integer"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "resource_id",
+          "revision_id",
+          "source_id",
+          "source_revision",
+          "path",
+          "start_line",
+          "end_line",
+          "kind"
+        ],
+        "title": "EvidenceRef",
+        "type": "object"
+      },
+      "FeedbackCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Comment",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "rating": {
+            "enum": [
+              "helpful",
+              "unhelpful",
+              "incorrect"
+            ],
+            "title": "Rating",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "rating",
+          "idempotency_key"
+        ],
+        "title": "FeedbackCreate",
+        "type": "object"
+      },
+      "FeedbackReceipt": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "run_id"
+        ],
+        "title": "FeedbackReceipt",
+        "type": "object"
+      },
+      "GenerationData": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "round": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Round"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "enum": [
+                  "final",
+                  "decision"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
+          },
+          "status": {
+            "enum": [
+              "started",
+              "tools_requested",
+              "decision_complete",
+              "tool_budget_reached"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "GenerationData",
+        "type": "object"
+      },
+      "GenerationEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GenerationData"
+          },
+          "seq": {
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "generation",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "type",
+          "data"
+        ],
+        "title": "GenerationEvent",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HiddenRun": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "content_hidden": {
+            "const": true,
+            "title": "Content Hidden",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "event_seq": {
+            "title": "Event Seq",
+            "type": "integer"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "status",
+          "event_seq",
+          "created_at",
+          "finished_at",
+          "content_hidden"
+        ],
+        "title": "HiddenRun",
+        "type": "object"
+      },
+      "HiddenSummary": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "content_hidden": {
+            "const": true,
+            "title": "Content Hidden",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "independent_evidence_count": {
+            "const": 0,
+            "title": "Independent Evidence Count",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "independent_evidence_count",
+          "content_hidden"
+        ],
+        "title": "HiddenSummary",
+        "type": "object"
+      },
+      "JsonValue": {},
+      "Publish": {
+        "additionalProperties": false,
+        "properties": {
+          "base_configuration_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Base Configuration Id",
+            "type": "string"
+          },
+          "shared": {
+            "default": true,
+            "title": "Shared",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "base_configuration_id"
+        ],
+        "title": "Publish",
+        "type": "object"
+      },
+      "QueuedEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EmptyData"
+          },
+          "seq": {
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "queued",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "type",
+          "data"
+        ],
+        "title": "QueuedEvent",
+        "type": "object"
+      },
+      "Retry": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotency_key": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Idempotency Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idempotency_key"
+        ],
+        "title": "Retry",
+        "type": "object"
+      },
+      "RunCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "configuration_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Configuration Id"
+          },
+          "idempotency_key": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "known_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Known At"
+          },
+          "question": {
+            "maxLength": 8192,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "space_ids": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.:-]+$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Space Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "agent_id",
+          "session_id",
+          "question",
+          "space_ids",
+          "idempotency_key"
+        ],
+        "title": "RunCreate",
+        "type": "object"
+      },
+      "RunEvent": {
+        "discriminator": {
+          "mapping": {
+            "answer_block": "#/components/schemas/AnswerBlockEvent",
+            "completed": "#/components/schemas/CompletedEvent",
+            "context_ready": "#/components/schemas/ContextEvent",
+            "generation": "#/components/schemas/GenerationEvent",
+            "queued": "#/components/schemas/QueuedEvent",
+            "started": "#/components/schemas/StartedEvent",
+            "tool": "#/components/schemas/ToolEvent"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/QueuedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/StartedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/ContextEvent"
+          },
+          {
+            "$ref": "#/components/schemas/GenerationEvent"
+          },
+          {
+            "$ref": "#/components/schemas/ToolEvent"
+          },
+          {
+            "$ref": "#/components/schemas/AnswerBlockEvent"
+          },
+          {
+            "$ref": "#/components/schemas/CompletedEvent"
+          }
+        ],
+        "title": "RunEvent"
+      },
+      "RunList": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgentRunView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "RunList",
+        "type": "object"
+      },
+      "RunState": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "RunState",
+        "type": "object"
+      },
+      "SessionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "default": "新会话",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "title": "SessionCreate",
+        "type": "object"
+      },
+      "SessionList": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SessionView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "SessionList",
+        "type": "object"
+      },
+      "SessionView": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "created_at"
+        ],
+        "title": "SessionView",
+        "type": "object"
+      },
+      "StartedData": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "resumed": {
+            "title": "Resumed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "resumed"
+        ],
+        "title": "StartedData",
+        "type": "object"
+      },
+      "StartedEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/StartedData"
+          },
+          "seq": {
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "started",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "type",
+          "data"
+        ],
+        "title": "StartedEvent",
+        "type": "object"
+      },
+      "Strict": {
+        "additionalProperties": false,
+        "properties": {},
+        "title": "Strict",
+        "type": "object"
+      },
+      "SummaryInput": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "answer": {
+            "$ref": "#/components/schemas/Answer"
+          },
+          "answer_complete": {
+            "title": "Answer Complete",
+            "type": "boolean"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "answer",
+          "answer_complete",
+          "citations"
+        ],
+        "title": "SummaryInput",
+        "type": "object"
+      },
+      "SummaryList": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SummaryView"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "SummaryList",
+        "type": "object"
+      },
+      "SummaryView": {
+        "discriminator": {
+          "mapping": {
+            "False": "#/components/schemas/VisibleSummary",
+            "True": "#/components/schemas/HiddenSummary"
+          },
+          "propertyName": "content_hidden"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/HiddenSummary"
+          },
+          {
+            "$ref": "#/components/schemas/VisibleSummary"
+          }
+        ],
+        "title": "SummaryView"
+      },
+      "ToolData": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "name": {
+            "enum": [
+              "search",
+              "get",
+              "traverse",
+              "timeline",
+              "feedback",
+              "propose_revision"
+            ],
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "started",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "call_id",
+          "status"
+        ],
+        "title": "ToolData",
+        "type": "object"
+      },
+      "ToolEvent": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ToolData"
+          },
+          "seq": {
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "tool",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "type",
+          "data"
+        ],
+        "title": "ToolEvent",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VisibleAgentConfig": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "budget": {
+            "$ref": "#/components/schemas/Budget"
+          },
+          "max_output_tokens": {
+            "default": 2048,
+            "maximum": 8192.0,
+            "minimum": 128.0,
+            "title": "Max Output Tokens",
+            "type": "integer"
+          },
+          "mode": {
+            "default": "knowledge_qa",
+            "enum": [
+              "knowledge_qa",
+              "dependency_impact",
+              "incident_history",
+              "maintenance"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "model_configuration_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Configuration Id"
+          },
+          "prompt": {
+            "default": "",
+            "maxLength": 8000,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "space_ids": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.:-]+$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Space Ids",
+            "type": "array"
+          },
+          "tool_space_ids": {
+            "additionalProperties": {
+              "items": {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.:-]+$",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "propertyNames": {
+              "enum": [
+                "search",
+                "get",
+                "traverse",
+                "timeline",
+                "feedback",
+                "propose_revision"
+              ]
+            },
+            "title": "Tool Space Ids",
+            "type": "object"
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "search",
+                    "get",
+                    "traverse",
+                    "timeline",
+                    "feedback",
+                    "propose_revision"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools"
+          }
+        },
+        "required": [
+          "space_ids"
+        ],
+        "title": "VisibleAgentConfig",
+        "type": "object"
+      },
+      "VisibleRun": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "actual_scope": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Actual Scope",
+            "type": "array"
+          },
+          "agent_id": {
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Answer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answer_complete": {
+            "title": "Answer Complete",
+            "type": "boolean"
+          },
+          "budget": {
+            "$ref": "#/components/schemas/Budget"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "configuration_id": {
+            "title": "Configuration Id",
+            "type": "string"
+          },
+          "content_hidden": {
+            "const": false,
+            "title": "Content Hidden",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "entrypoint": {
+            "enum": [
+              "web",
+              "channel"
+            ],
+            "title": "Entrypoint",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "event_seq": {
+            "title": "Event Seq",
+            "type": "integer"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "rounds": {
+            "title": "Rounds",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tool_calls": {
+            "title": "Tool Calls",
+            "type": "integer"
+          },
+          "usage": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "title": "Usage",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "status",
+          "event_seq",
+          "created_at",
+          "finished_at",
+          "content_hidden",
+          "entrypoint",
+          "agent_id",
+          "configuration_id",
+          "actual_scope",
+          "question",
+          "answer",
+          "answer_complete",
+          "citations",
+          "usage",
+          "error_code",
+          "budget",
+          "rounds",
+          "tool_calls"
+        ],
+        "title": "VisibleRun",
+        "type": "object"
+      },
+      "VisibleSummary": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/SummaryInput"
+            },
+            "title": "Content",
+            "type": "array"
+          },
+          "content_hidden": {
+            "const": false,
+            "title": "Content Hidden",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "independent_evidence_count": {
+            "const": 0,
+            "title": "Independent Evidence Count",
+            "type": "integer"
+          },
+          "run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Run Ids",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "independent_evidence_count",
+          "content_hidden",
+          "run_ids",
+          "content"
+        ],
+        "title": "VisibleSummary",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ServiceIdentity": {
+        "description": "Fresh per-caller Ed25519 workload JWT, target audience. Supplied only by the existing trusted transport.",
+        "in": "header",
+        "name": "X-Service-Token",
+        "type": "apiKey"
+      },
+      "UserBearer": {
+        "description": "Forward the original user/delegated bearer unchanged; the existing auth boundary performs current authorization. Generated operations never retain it.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "Knowledge Agent",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/agents": {
+      "get": {
+        "operationId": "agent_get_api_v1_agents",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Agents",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.agents",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      },
+      "post": {
+        "operationId": "agent_post_api_v1_agents",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDefinition"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Create Agent",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.create_agent",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/agents/models": {
+      "get": {
+        "operationId": "agent_get_api_v1_agents_models",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentModelOptions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Model Options",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.model_options",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/agents/presets": {
+      "get": {
+        "operationId": "agent_get_api_v1_agents_presets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPresets"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Presets",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.presets",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/agents/{agent_id}": {
+      "get": {
+        "operationId": "agent_get_api_v1_agents_by_agent_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "configuration_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Configuration Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDefinition"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Agent",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.agent",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      },
+      "put": {
+        "operationId": "agent_put_api_v1_agents_by_agent_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDefinition"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Update Agent",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.update_agent",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/agents/{agent_id}/audit": {
+      "get": {
+        "operationId": "agent_get_api_v1_agents_by_agent_id_audit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentAudit"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Audit",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.audit",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/agents/{agent_id}/publish": {
+      "post": {
+        "operationId": "agent_post_api_v1_agents_by_agent_id_publish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Publish"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPublication"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Publish",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.publish",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/agents/{agent_id}/versions": {
+      "get": {
+        "operationId": "agent_get_api_v1_agents_by_agent_id_versions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentVersions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Versions",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.versions",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/feedback": {
+      "post": {
+        "operationId": "agent_post_api_v1_feedback",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Feedback",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.feedback",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/runs": {
+      "post": {
+        "operationId": "agent_post_api_v1_runs",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Run",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.run",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/runs/{run_id}": {
+      "get": {
+        "operationId": "agent_get_api_v1_runs_by_run_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Run Get",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.run_get",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/runs/{run_id}/cancel": {
+      "post": {
+        "operationId": "agent_post_api_v1_runs_by_run_id_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Strict"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Cancel",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.cancel",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/runs/{run_id}/citations/{citation_id}": {
+      "get": {
+        "operationId": "agent_get_api_v1_runs_by_run_id_citations_by_citation_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "citation_id",
+            "required": true,
+            "schema": {
+              "title": "Citation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Run Citation",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.run_citation",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/runs/{run_id}/events": {
+      "get": {
+        "operationId": "agent_get_api_v1_runs_by_run_id_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Cursor",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Native SSE cursor header overrides the cursor query parameter; ASCII decimal bounded by the handler validator.",
+            "in": "header",
+            "name": "last-event-id",
+            "required": false,
+            "schema": {
+              "pattern": "^[0-9]{1,18}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Events",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-event-schema": {
+          "$ref": "#/components/schemas/RunEvent"
+        },
+        "x-handler": "create_app.<locals>.events",
+        "x-response-typing": "stream",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "sse"
+      }
+    },
+    "/api/v1/runs/{run_id}/export": {
+      "get": {
+        "operationId": "agent_get_api_v1_runs_by_run_id_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Export",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.export",
+        "x-response-typing": "text",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "text"
+      }
+    },
+    "/api/v1/runs/{run_id}/retry": {
+      "post": {
+        "operationId": "agent_post_api_v1_runs_by_run_id_retry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Retry"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Retry",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.retry",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/sessions": {
+      "get": {
+        "operationId": "agent_get_api_v1_sessions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Sessions",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.sessions",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      },
+      "post": {
+        "operationId": "agent_post_api_v1_sessions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Session",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.session",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/sessions/{session_id}": {
+      "delete": {
+        "operationId": "agent_delete_api_v1_sessions_by_session_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClearedSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Clear",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.clear",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/sessions/{session_id}/history": {
+      "get": {
+        "operationId": "agent_get_api_v1_sessions_by_session_id_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "History",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.history",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/api/v1/sessions/{session_id}/summaries": {
+      "get": {
+        "operationId": "agent_get_api_v1_sessions_by_session_id_summaries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Summaries",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.summaries",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      },
+      "post": {
+        "operationId": "agent_post_api_v1_sessions_by_session_id_summaries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Strict"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Summary Create",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.summary_create",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "agent_get_healthz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "service": {
+                      "const": "agent",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": "ok",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "service",
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [],
+        "summary": "Health",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.health",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/agents/{agent_id}/published": {
+      "get": {
+        "operationId": "agent_get_internal_v1_agents_by_agent_id_published",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDefinition"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Published For Channel",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.published_for_channel",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/channel/conversation/cancel": {
+      "post": {
+        "operationId": "agent_post_internal_v1_channel_conversation_cancel",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Strict"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelledConversation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Channel Cancel Conversation",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.channel_cancel_conversation",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/channel/conversation/clear": {
+      "post": {
+        "operationId": "agent_post_internal_v1_channel_conversation_clear",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Strict"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClearedConversation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Channel Clear",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.channel_clear",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/channel/runs": {
+      "post": {
+        "operationId": "agent_post_internal_v1_channel_runs",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChannelQuestion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Channel Run",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.channel_run",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/channel/runs/{run_id}": {
+      "get": {
+        "operationId": "agent_get_internal_v1_channel_runs_by_run_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Channel Get",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.channel_get",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/channel/runs/{run_id}/cancel": {
+      "post": {
+        "operationId": "agent_post_internal_v1_channel_runs_by_run_id_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Strict"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Channel Cancel",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.channel_cancel",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/channel/runs/{run_id}/events": {
+      "get": {
+        "operationId": "agent_get_internal_v1_channel_runs_by_run_id_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Cursor",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Native SSE cursor header overrides the cursor query parameter; ASCII decimal bounded by the handler validator.",
+            "in": "header",
+            "name": "last-event-id",
+            "required": false,
+            "schema": {
+              "pattern": "^[0-9]{1,18}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Channel Events",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-event-schema": {
+          "$ref": "#/components/schemas/RunEvent"
+        },
+        "x-handler": "create_app.<locals>.channel_events",
+        "x-response-typing": "stream",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "sse"
+      }
+    },
+    "/internal/v1/feedback": {
+      "post": {
+        "operationId": "agent_post_internal_v1_feedback",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Feedback",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.feedback",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/runs": {
+      "post": {
+        "operationId": "agent_post_internal_v1_runs",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Run",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.run",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/runs/{run_id}": {
+      "get": {
+        "operationId": "agent_get_internal_v1_runs_by_run_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Run Get",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.run_get",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/runs/{run_id}/cancel": {
+      "post": {
+        "operationId": "agent_post_internal_v1_runs_by_run_id_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Strict"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Cancel",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.cancel",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/internal/v1/runs/{run_id}/events": {
+      "get": {
+        "operationId": "agent_get_internal_v1_runs_by_run_id_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Cursor",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Native SSE cursor header overrides the cursor query parameter; ASCII decimal bounded by the handler validator.",
+            "in": "header",
+            "name": "last-event-id",
+            "required": false,
+            "schema": {
+              "pattern": "^[0-9]{1,18}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Events",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-event-schema": {
+          "$ref": "#/components/schemas/RunEvent"
+        },
+        "x-handler": "create_app.<locals>.events",
+        "x-response-typing": "stream",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "sse"
+      }
+    },
+    "/internal/v1/sessions": {
+      "post": {
+        "operationId": "agent_post_internal_v1_sessions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Native validation exception handler error envelope"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [
+          {
+            "ServiceIdentity": [],
+            "UserBearer": []
+          }
+        ],
+        "summary": "Session",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.session",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "agent_get_readyz",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "status": {
+                      "const": "ready",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorEnvelope"
+                }
+              }
+            },
+            "description": "Sanitized native response-validation failure; no input or exception body is exposed"
+          }
+        },
+        "security": [],
+        "summary": "Ready",
+        "x-domain-error-schema": {
+          "$ref": "#/components/schemas/DomainErrorEnvelope"
+        },
+        "x-handler": "create_app.<locals>.ready",
+        "x-response-typing": "typed",
+        "x-service": "agent",
+        "x-source": "services/python/src/knowledge_platform/agent/app.py",
+        "x-transport": "http-json"
+      }
+    }
+  },
+  "x-contract-source": "runtime FastAPI routes and native Pydantic schemas",
+  "x-framework-routes": [],
+  "x-mounted-protocols": [],
+  "x-runtime-service-version": "1.0.0"
+}

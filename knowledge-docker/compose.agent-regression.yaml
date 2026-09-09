@@ -1,0 +1,22 @@
+# Explicit Chat protocol simulation. No real Bailian/model quality claim.
+services:
+  agent-model-provider:
+    image: sunny-knowledge/regression:v2-local
+    profiles: [test]
+    command: [python, /fixture/server.py]
+    volumes:
+      - ./tests/agent_provider:/fixture:ro
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  llm:
+    environment:
+      LLM_ALLOW_HTTP_PROVIDERS: 'true'
+  regression:
+    volumes:
+      - ./tests/agent_http:/workspace/knowledge-docker/tests/agent_http:ro
