@@ -16,7 +16,9 @@ export function errorMessage(error:unknown):string {
 export const pathId=(value:string)=>encodeURIComponent(value);
 export function query(values:Record<string,string|number|undefined|null>) { const params=new URLSearchParams(); Object.entries(values).forEach(([key,value])=>{if(value!==undefined&&value!==null&&value!=='')params.set(key,String(value));}); return params.size ? `?${params}` : ''; }
 export class ApiClient {
-  constructor(private token:()=>Promise<string|null>,private fetcher:typeof fetch=fetch){}
+  // fetch must be invoked with the Window receiver; a bare method call
+  // (this.fetcher(...)) throws "Illegal invocation" in browsers.
+  constructor(private token:()=>Promise<string|null>,private fetcher:typeof fetch=fetch.bind(globalThis)){}
   async request<T>(path:string,init:RequestInit={}):Promise<T> {
     const response=await this.response(path,init);
     if(response.status===204)return undefined as T;
@@ -24,12 +26,14 @@ export class ApiClient {
   }
   async response(path:string,init:RequestInit={}):Promise<Response> {
     if(!path.startsWith('/')||path.startsWith('//')||path.includes('://'))throw new ApiError(400,'invalid_path');
-    const token=await this.token(); if(!token)throw new ApiError(401,'unauthenticated');
+    let token:string|null=null;
+    try { token=await this.token(); } catch(e) { console.error('[diag] token threw', path, e); throw new ApiError(401,'unauthenticated'); }
+    if(!token){ console.error('[diag] token null', path); throw new ApiError(401,'unauthenticated'); }
     const headers=new Headers(init.headers); headers.set('Authorization',`Bearer ${token}`); headers.set('Accept',headers.get('Accept')??'application/json'); if(init.body)headers.set('Content-Type','application/json');
     let response:Response;
     try { response=await this.fetcher(`/api/v1${path}`,{...init,headers,credentials:'omit',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer'}); }
-    catch(error) { if(error instanceof DOMException&&error.name==='AbortError')throw error; throw new ApiError(0,'network_error'); }
-    if(!response.ok) { let code='request_failed'; try { const body=await response.json(); if(typeof body?.error?.code==='string')code=body.error.code; }catch{/* Gateway may return a non-JSON error. */} throw new ApiError(response.status,code,response.headers.get('X-Request-ID')??undefined); }
+    catch(error) { if(error instanceof DOMException&&error.name==='AbortError')throw error; console.error('[diag] fetch threw', path, error); throw new ApiError(0,'network_error'); }
+    if(!response.ok) { let code='request_failed'; try { const body=await response.json(); if(typeof body?.error?.code==='string')code=body.error.code; }catch{/* Gateway may return a non-JSON error. */} console.error('[diag] http', response.status, path); throw new ApiError(response.status,code,response.headers.get('X-Request-ID')??undefined); }
     return response;
   }
   get<T>(path:string,signal?:AbortSignal){return this.request<T>(path,{signal});}
