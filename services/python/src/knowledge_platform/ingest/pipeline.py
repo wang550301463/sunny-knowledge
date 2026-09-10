@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 from dataclasses import asdict
 from urllib.parse import quote
 
@@ -18,6 +19,7 @@ from .service import IngestService
 
 MANIFEST_PATH = '.__knowledge__/manifest.json'
 TERMINAL = {'succeeded', 'review_needed', 'superseded', 'failed'}
+logger = logging.getLogger(__name__)
 
 
 class Pipeline:
@@ -27,11 +29,13 @@ class Pipeline:
         self.compiler, self.analyzer = KnowledgeCompiler(), StaticLanguageAnalyzer()
 
     async def advance(self, task_id: str) -> bool:
+        stage_at_entry = '?'
         try:
             async with self.db.session() as session, session.begin():
                 # Consistent lock order: source then task. API version mutations lock source too.
                 initial = await session.get(Task, task_id)
                 if initial is None: return True
+                stage_at_entry = initial.stage
                 service = IngestService(session, self.auth, self.machine, self.internal, self.box)
                 source = await service.source(initial.source_id, lock=True)
                 task = await session.scalar(select(Task).where(Task.id == task_id).with_for_update().execution_options(populate_existing=True))
@@ -68,6 +72,9 @@ class Pipeline:
                 raise IngestError(503, 'invalid_task_state', 'Task has an invalid durable stage')
         except (IngestError, HTTPException) as error:
             status = error.status if isinstance(error, IngestError) else error.status_code
+            logger.error('pipeline advance failed for task %s at stage %s: %s %s',
+                        task_id, stage_at_entry, type(error).__name__,
+                        str(error)[:300])
             if status >= 500:
                 # Dependency failure retries the same durable step; no payload enters Temporal.
                 raise IngestError(503, 'dependency_unavailable', 'Pipeline dependency unavailable') from None
@@ -121,6 +128,8 @@ class Pipeline:
 
     async def plan(self, session, source, task):
         registrations = (await session.scalars(select(Registration).where(Registration.source_id == source.id, Registration.version == task.source_version))).all()
+        logger.info('plan: starting for source %s v%s (%d registrations)',
+                    source.id, task.source_version, len(registrations))
         snapshots = {r.path: r.snapshot for r in registrations if r.path != MANIFEST_PATH}
         plans, diagnostics = [], []
         if task.operation == 'sync':
@@ -163,8 +172,16 @@ class Pipeline:
                              request={**body, **({'content': page['content']} if 'content' in page else {})}))
         task.result = {'diagnostics': diagnostics[:1000], 'diagnostics_truncated': len(diagnostics) > 1000}
         task.stage = 'publish'
+        logger.info('plan: created %d steps (code=%d, proposal=%d, validity=%d, retire=%d), diagnostics=%d',
+                    len(plans),
+                    sum(1 for p in plans if p[0] == 'code'),
+                    sum(1 for p in plans if p[0] == 'proposal'),
+                    sum(1 for p in plans if p[0] == 'validity'),
+                    sum(1 for p in plans if p[0] in ('retire', 'deletion')),
+                    len(diagnostics))
 
     async def publish_one(self, session, service, source, task, step, token, actor):
+        logger.info('publish_one: step %d kind=%s page_id=%s path=%s', step.number, step.kind, step.page_id, step.path)
         path = '/api/v1/pages/' + quote(step.page_id, safe='')
         key = hashlib.sha256(f'{task.identity}:{step.number}'.encode()).hexdigest()
         if not step.request.get('_base_captured'):

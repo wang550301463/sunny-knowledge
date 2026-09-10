@@ -124,11 +124,20 @@ async def initialize(engine):
             'ALTER TABLE ingest_tasks ADD COLUMN IF NOT EXISTS workflow_started boolean NOT NULL DEFAULT false'))
         await connection.execute(text(
             'ALTER TABLE ingest_tasks ADD COLUMN IF NOT EXISTS checkpoint jsonb NOT NULL DEFAULT \'{}\''))
-        # Registration.snapshot stores the full knowledge snapshot response (dict)
-        await connection.execute(text(
-            'ALTER TABLE ingest_registrations DROP COLUMN IF EXISTS snapshot'))
-        await connection.execute(text(
-            'ALTER TABLE ingest_registrations ADD COLUMN IF NOT EXISTS snapshot jsonb'))
+        # Registration.snapshot stores the full knowledge snapshot response (dict).
+        # Only migrate if the column is still varchar (drop+add wipes data, so
+        # guard with a type check to make it idempotent and non-destructive).
+        await connection.execute(text("""
+            DO $$ BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name = 'ingest_registrations'
+                             AND column_name = 'snapshot'
+                             AND data_type = 'character varying') THEN
+                    ALTER TABLE ingest_registrations DROP COLUMN snapshot;
+                    ALTER TABLE ingest_registrations ADD COLUMN snapshot jsonb;
+                END IF;
+            END $$;
+        """))
         for table in ('ingest_source_versions', 'ingest_previews', 'ingest_audit'):
             await connection.execute(text(f'DROP TRIGGER IF EXISTS immutable_record ON {table}'))
             await connection.execute(text(f'''CREATE TRIGGER immutable_record BEFORE UPDATE OR DELETE

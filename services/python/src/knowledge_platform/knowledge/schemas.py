@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 Key = Annotated[str, Field(min_length=1, max_length=512)]
 EntityType = Literal['Service', 'Module', 'File', 'Person', 'Dependency', 'Decision', 'Policy', 'Incident', 'Change', 'Procedure']
-EvidenceKind = Literal['code', 'markdown', 'ticket', 'policy']
+EvidenceKind = Literal['code', 'markdown', 'ticket', 'policy', 'source_manifest']
 
 
 class StrictModel(BaseModel):
