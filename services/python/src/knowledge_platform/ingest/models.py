@@ -65,6 +65,8 @@ class Task(Base):
     error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     result: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_by: Mapped[str] = mapped_column(String(512))
+    workflow_started: Mapped[bool] = mapped_column(Boolean, default=False)
+    checkpoint: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
@@ -116,6 +118,12 @@ async def initialize(engine):
         ):
             await connection.execute(text(
                 f'ALTER TABLE ingest_sources ADD COLUMN IF NOT EXISTS {column} {definition}'))
+        # Task dispatch checkpoint column (Temporal dispatcher uses it to
+        # avoid duplicate workflow starts after a restart).
+        await connection.execute(text(
+            'ALTER TABLE ingest_tasks ADD COLUMN IF NOT EXISTS workflow_started boolean NOT NULL DEFAULT false'))
+        await connection.execute(text(
+            'ALTER TABLE ingest_tasks ADD COLUMN IF NOT EXISTS checkpoint jsonb NOT NULL DEFAULT \'{}\''))
         for table in ('ingest_source_versions', 'ingest_previews', 'ingest_audit'):
             await connection.execute(text(f'DROP TRIGGER IF EXISTS immutable_record ON {table}'))
             await connection.execute(text(f'''CREATE TRIGGER immutable_record BEFORE UPDATE OR DELETE
