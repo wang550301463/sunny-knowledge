@@ -403,9 +403,96 @@ class CohereAdapter(HTTPAdapter):
         return {"results": normalized, "usage": usage(meta.get("billed_units"))}
 
 
+class DashScopeRerankAdapter(HTTPAdapter):
+    """Alibaba Bailian native rerank protocol (see BAILIAN.md).
+
+    Appends /services/rerank/text-rerank/text-rerank, sends
+    {model, input:{query,documents}, parameters:{top_n}}, reads
+    output.results plus top-level usage and request_id.
+    """
+    capabilities = frozenset({"rerank"})
+
+    def payload(self, config, body):
+        return "/services/rerank/text-rerank/text-rerank", {
+            "model": config.provider_model,
+            "input": {
+                "query": body.query,
+                "documents": body.documents,
+            },
+            "parameters": {
+                "top_n": body.top_n or len(body.documents),
+            },
+        }
+
+    def normalize(self, config, body, value):
+        output = value.get("output")
+        if not isinstance(output, dict):
+            raise invalid()
+        results = output.get("results")
+        if not isinstance(results, list) or len(results) != (body.top_n or len(body.documents)):
+            raise invalid()
+        normalized, indices = [], set()
+        for item in results:
+            if not isinstance(item, dict):
+                raise invalid()
+            idx, score = item.get("index"), item.get("relevance_score")
+            if (
+                type(idx) is not int
+                or not 0 <= idx < len(body.documents)
+                or idx in indices
+                or not numeric(score)
+            ):
+                raise invalid()
+            indices.add(idx)
+            normalized.append({"index": idx, "score": score})
+        return {"results": normalized, "usage": usage(value.get("usage"))}
+
+
+class DashScopeRerankCompatibleAdapter(HTTPAdapter):
+    """Alibaba Bailian workspace compatible-mode rerank (see BAILIAN.md).
+
+    Appends /reranks (plural), sends flat {model,query,documents,top_n},
+    reads top-level results, usage and id.
+    """
+    capabilities = frozenset({"rerank"})
+
+    def payload(self, config, body):
+        return "/reranks", {
+            "model": config.provider_model,
+            "query": body.query,
+            "documents": body.documents,
+            "top_n": body.top_n or len(body.documents),
+        }
+
+    def normalize(self, config, body, value):
+        results = value.get("results")
+        if not isinstance(results, list) or len(results) != (body.top_n or len(body.documents)):
+            raise invalid()
+        normalized, indices = [], set()
+        for item in results:
+            if not isinstance(item, dict):
+                raise invalid()
+            idx, score = item.get("index"), item.get("relevance_score")
+            if (
+                type(idx) is not int
+                or not 0 <= idx < len(body.documents)
+                or idx in indices
+                or not numeric(score)
+            ):
+                raise invalid()
+            indices.add(idx)
+            normalized.append({"index": idx, "score": score})
+        return {"results": normalized, "usage": usage(value.get("usage"))}
+
+
 class AdapterRegistry:
     def __init__(self, client):
-        self.adapters = {"openai": OpenAIAdapter(client), "cohere": CohereAdapter(client)}
+        self.adapters = {
+            "openai": OpenAIAdapter(client),
+            "cohere": CohereAdapter(client),
+            "dashscope_rerank": DashScopeRerankAdapter(client),
+            "dashscope_rerank_compatible": DashScopeRerankCompatibleAdapter(client),
+        }
 
     def register(self, name, adapter):
         if name in self.adapters or not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", name):
