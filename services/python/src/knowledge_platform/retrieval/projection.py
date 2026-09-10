@@ -111,7 +111,6 @@ def compile_fragments(projection, *, configuration_id, dimensions, chunk_chars=2
             "title": content["title"],
             "read_clauses": projection["read_clauses"],
             "acl_domain": projection["acl_domain"],
-            "policy_fingerprint": policy_fingerprint(policies),
             "acl_epoch": policies[0].auth_epoch,
             "acl_version": max(p.acl_version for p in policies),
             "state": state,
