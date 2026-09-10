@@ -96,23 +96,50 @@ class Neo4jGraph:
             valid_at=graph.valid_from or graph.known_at, created_at=graph.known_at, entity_edges=list(edge_ids.values()))
         try:
             async with self.driver.transaction() as tx:
-                await self.driver.episode_node_ops.save(self.driver, episode, tx=tx)
-                await tx.run('MATCH (n:Episodic {uuid:$id}) SET n += $metadata', id=projection_id, metadata=metadata)
+                # Direct Cypher writes (bypasses graphiti-core's save methods which
+                # require non-null name_embedding for db.create.setNodeVectorProperty;
+                # knowledge projections don't carry embeddings).
+                episode_props = {'uuid': episode.uuid, 'name': episode.name, 'group_id': episode.group_id,
+                    'source': 'json', 'source_description': episode.source_description, 'content': episode.content,
+                    'created_at': episode.created_at.isoformat() if episode.created_at else None,
+                    'valid_at': episode.valid_at.isoformat() if episode.valid_at else None}
+                await tx.run(
+                    'MERGE (n:Episodic {uuid: $uuid}) SET n += $props, n += $metadata',
+                    uuid=projection_id, props=episode_props, metadata=metadata)
                 for node in graph.nodes:
-                    entity = EntityNode(uuid=node_ids[node.id], name=node.name, group_id=graph.group_id,
-                        labels=[] if node.type == 'unknown' else [node.type], summary=node.summary, created_at=graph.known_at,
-                        attributes={**metadata, 'knowledge_entity_id': node.id, 'knowledge_fragments': node.fragment_ids,
-                            'knowledge_payload': node.model_dump_json()})
-                    await self.driver.entity_node_ops.save(self.driver, entity, tx=tx)
-                    mention = EpisodicEdge(uuid=digest([projection_id, 'mention', node.id]), group_id=graph.group_id,
-                        source_node_uuid=projection_id, target_node_uuid=node_ids[node.id], created_at=graph.known_at)
-                    await self.driver.episodic_edge_ops.save(self.driver, mention, tx=tx)
+                    entity_uuid = node_ids[node.id]
+                    entity_props = {'uuid': entity_uuid, 'name': node.name, 'group_id': graph.group_id,
+                        'summary': node.summary,
+                        'created_at': graph.known_at.isoformat() if graph.known_at else None,
+                        **metadata, 'knowledge_entity_id': node.id, 'knowledge_fragments': node.fragment_ids,
+                        'knowledge_payload': node.model_dump_json()}
+                    extra_labels = '' if node.type == 'unknown' else ':' + node.type
+                    await tx.run(
+                        f'MERGE (n:Entity{extra_labels} {{uuid: $uuid}}) SET n += $props',
+                        uuid=entity_uuid, props=entity_props)
+                    mention_uuid = digest([projection_id, 'mention', node.id])
+                    await tx.run(
+                        'MATCH (e:Episodic {uuid: $euuid}), (n:Entity {uuid: $nuuid}) '
+                        'MERGE (e)-[r:MENTIONS {uuid: $muuid}]->(n) '
+                        'SET r.group_id = $group_id, r.created_at = $created_at',
+                        euuid=projection_id, nuuid=entity_uuid, muuid=mention_uuid,
+                        group_id=graph.group_id,
+                        created_at=graph.known_at.isoformat() if graph.known_at else None)
                 for edge in graph.edges:
-                    entity_edge = EntityEdge(uuid=edge_ids[edge.id], group_id=graph.group_id, source_node_uuid=node_ids[edge.source], target_node_uuid=node_ids[edge.target],
-                        name=edge.type, fact=edge.text, episodes=[projection_id], created_at=graph.known_at, valid_at=graph.valid_from, invalid_at=graph.valid_until,
-                        attributes={**metadata, 'knowledge_edge_id': edge.id, 'knowledge_kind': edge.kind, 'knowledge_fragments': edge.fragment_ids,
-                            'knowledge_payload': edge.model_dump_json()})
-                    await self.driver.entity_edge_ops.save(self.driver, entity_edge, tx=tx)
+                    edge_uuid = edge_ids[edge.id]
+                    edge_props = {'uuid': edge_uuid, 'group_id': graph.group_id, 'name': edge.type,
+                        'fact': edge.text, 'episodes': [projection_id],
+                        'created_at': graph.known_at.isoformat() if graph.known_at else None,
+                        'valid_at': graph.valid_from.isoformat() if graph.valid_from else None,
+                        'invalid_at': graph.valid_until.isoformat() if graph.valid_until else None,
+                        **metadata, 'knowledge_edge_id': edge.id, 'knowledge_kind': edge.kind,
+                        'knowledge_fragments': edge.fragment_ids, 'knowledge_payload': edge.model_dump_json()}
+                    await tx.run(
+                        'MATCH (s:Entity {uuid: $suuid}), (t:Entity {uuid: $tuuid}) '
+                        'MERGE (s)-[r:HAS_KNOWLEDGE {uuid: $euuid}]->(t) '
+                        'SET r += $props',
+                        suuid=node_ids[edge.source], tuuid=node_ids[edge.target],
+                        euuid=edge_uuid, props=edge_props)
         except Exception as error:
             import logging
             logging.getLogger(__name__).error('Neo4j write failed: %s: %s', type(error).__name__, str(error)[:300])

@@ -6,7 +6,7 @@ set consumed by graphiti/store.py: Page, Revision (graph + fragments + policy
 fingerprint), Delivery outbox offsets and the Rebuild checkpoint."""
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Index, String, UniqueConstraint, text
+from sqlalchemy import BigInteger, Boolean, DateTime, Index, Integer, String, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -42,11 +42,14 @@ class Revision(Base):
     graph: Mapped[dict] = mapped_column(JSONB)
     fragment_ids: Mapped[list] = mapped_column(JSONB)
     policy_fingerprint: Mapped[str] = mapped_column(String)
+    acl_domain: Mapped[str] = mapped_column(String, default="")
     acl_epoch: Mapped[int] = mapped_column(BigInteger)
     policies: Mapped[list] = mapped_column(JSONB)
     is_current: Mapped[bool] = mapped_column(Boolean)
     generation: Mapped[int] = mapped_column(BigInteger)
     checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    failure_code: Mapped[str | None] = mapped_column(String, nullable=True)
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Delivery(Base):
@@ -71,3 +74,11 @@ async def initialize(engine):
         await connection.execute(text("SELECT pg_advisory_xact_lock(728414)"))
         await connection.execute(text("CREATE SEQUENCE IF NOT EXISTS graphiti_projection_generation AS bigint START WITH 1"))
         await connection.run_sync(Base.metadata.create_all)
+        # Additive columns for existing deployments (store.py writes acl_domain,
+        # failure_code, failed_attempts).
+        await connection.execute(text(
+            "ALTER TABLE graphiti_revisions ADD COLUMN IF NOT EXISTS acl_domain varchar NOT NULL DEFAULT ''"))
+        await connection.execute(text(
+            "ALTER TABLE graphiti_revisions ADD COLUMN IF NOT EXISTS failure_code varchar"))
+        await connection.execute(text(
+            "ALTER TABLE graphiti_revisions ADD COLUMN IF NOT EXISTS failed_attempts integer NOT NULL DEFAULT 0"))
