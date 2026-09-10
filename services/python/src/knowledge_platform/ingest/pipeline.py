@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 from dataclasses import asdict
 from urllib.parse import quote
 
@@ -88,21 +89,34 @@ class Pipeline:
             task.stage = 'plan'
             return
         if index == len(files):
-            file = {'path': MANIFEST_PATH, 'kind': 'source_manifest', **manifest['canonical_manifest']}
+            # The manifest itself is registered as a virtual source_manifest file.
+            # Constructed inline from the preview manifest (not stored in S3).
+            manifest_text = json.dumps(
+                {k: v for k, v in manifest.items() if k != 'canonical_manifest'},
+                sort_keys=True, separators=(',', ':'), ensure_ascii=False)
+            manifest_bytes = manifest_text.encode('utf-8')
+            body = {'source_id': source.id, 'source_revision': manifest['source_revision'],
+                    'resource_id': source.resource_id, 'space_id': source.space_id,
+                    'path': MANIFEST_PATH, 'kind': 'source_manifest',
+                    'text': manifest_text,
+                    'sha256': hashlib.sha256(manifest_bytes).hexdigest(),
+                    'object_key': 'manifests/' + source.id + '/' + str(task.source_version)}
         else:
             file = files[index]
-        if file['kind'] != 'raw':
+            if file['kind'] == 'raw':
+                task.checkpoint = {**task.checkpoint, 'registered': index + 1}
+                return
             data = await asyncio.to_thread(self.storage.get_bytes, file['object_key'], file['sha256'], file['size'])
             body = {'source_id': source.id, 'source_revision': manifest['source_revision'],
                     'resource_id': source.resource_id, 'space_id': source.space_id,
                     'path': file['path'], 'kind': file['kind'], 'text': data.decode('utf-8'),
                     'sha256': file['sha256'], 'object_key': file['object_key']}
-            snapshot = await self.internal.request('POST', '/internal/v1/sources/snapshots', token, body)
-            old = await session.get(Registration, (source.id, task.source_version, file['path']))
-            if old is None:
-                session.add(Registration(source_id=source.id, version=task.source_version, path=file['path'], snapshot=snapshot))
-            elif old.snapshot != snapshot:
-                raise IngestError(409, 'snapshot_conflict', 'Canonical immutable snapshot changed')
+        snapshot = await self.internal.request('POST', '/internal/v1/sources/snapshots', token, body)
+        old = await session.get(Registration, (source.id, task.source_version, body['path']))
+        if old is None:
+            session.add(Registration(source_id=source.id, version=task.source_version, path=body['path'], snapshot=snapshot))
+        elif old.snapshot != snapshot:
+            raise IngestError(409, 'snapshot_conflict', 'Canonical immutable snapshot changed')
         task.checkpoint = {**task.checkpoint, 'registered': index + 1}
 
     async def plan(self, session, source, task):

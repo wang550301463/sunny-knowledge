@@ -124,6 +124,11 @@ async def initialize(engine):
             'ALTER TABLE ingest_tasks ADD COLUMN IF NOT EXISTS workflow_started boolean NOT NULL DEFAULT false'))
         await connection.execute(text(
             'ALTER TABLE ingest_tasks ADD COLUMN IF NOT EXISTS checkpoint jsonb NOT NULL DEFAULT \'{}\''))
+        # Registration.snapshot stores the full knowledge snapshot response (dict)
+        await connection.execute(text(
+            'ALTER TABLE ingest_registrations DROP COLUMN IF EXISTS snapshot'))
+        await connection.execute(text(
+            'ALTER TABLE ingest_registrations ADD COLUMN IF NOT EXISTS snapshot jsonb'))
         for table in ('ingest_source_versions', 'ingest_previews', 'ingest_audit'):
             await connection.execute(text(f'DROP TRIGGER IF EXISTS immutable_record ON {table}'))
             await connection.execute(text(f'''CREATE TRIGGER immutable_record BEFORE UPDATE OR DELETE
@@ -134,10 +139,12 @@ class Registration(Base):
 
     Reconstructed 2026-09-09 from pipeline.py usage: session.get(Registration,
     (source.id, task.source_version, file['path'])) and add(Registration(
-    source_id=..., version=..., path=..., snapshot=...))."""
+    source_id=..., version=..., path=..., snapshot=...)). The snapshot column
+    stores the full knowledge-service snapshot response (dict with id, text,
+    kind, sha256 etc.) for downstream plan/publish consumption."""
     __tablename__ = 'ingest_registrations'
     source_id: Mapped[str] = mapped_column(ForeignKey('ingest_sources.id'), primary_key=True)
     version: Mapped[int] = mapped_column(Integer, primary_key=True)
     path: Mapped[str] = mapped_column(String(2048), primary_key=True)
-    snapshot: Mapped[str] = mapped_column(String(512))
+    snapshot: Mapped[dict] = mapped_column(JSONB)
     registered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, server_default=text('now()'))
