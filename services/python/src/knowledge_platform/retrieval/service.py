@@ -52,7 +52,7 @@ class RetrievalService:
         guard,domains,fingerprints=await self.scope(token,request)
         vector=(await self.clients.embeddings(token,embedding,[request.query],self.settings.retrieval_embedding_dimensions))[0]
         await guard.finish()
-        bm25body,vectorbody=search_bodies(request,subjects=guard.principal.subjects,domains=domains,fingerprints=fingerprints,configuration_id=embedding,query_vector=vector)
+        bm25body,vectorbody=search_bodies(request,subjects=guard.principal.subjects,domains=domains,configuration_id=embedding,query_vector=vector)
         keyword,semantic=await asyncio.gather(self.index.search(bm25body),self.index.search(vectorbody))
         candidates={f.id:f for f in keyword+semantic}
         live=await self.live(guard,list(candidates.values()),request)

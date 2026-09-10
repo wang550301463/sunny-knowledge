@@ -133,6 +133,31 @@ class KnowledgeService:
         result.pop('object_key')
         return result
 
+    async def authorize_evidence(self, token: str, evidence) -> dict:
+        """Batch evidence authorization for retrieval workers.
+
+        Returns {'decisions': [{evidence: <original ref>, allowed: bool,
+        excerpt: str, sha256: str}]} — allowed is true only when the
+        snapshot exists and the caller has read access to its space.
+        When allowed, excerpt and sha256 come from the source snapshot.
+        """
+        decisions = []
+        for ref in evidence:
+            snapshot = await self.session.get(SourceSnapshot, ref.revision_id)
+            if snapshot is None:
+                decisions.append({'evidence': ref.model_dump(mode='json'), 'allowed': False, 'excerpt': '', 'sha256': ''})
+                continue
+            try:
+                await self.auth.require(token, 'read', snapshot.space_id, snapshot.resource_id)
+                allowed = True
+            except HTTPException:
+                allowed = False
+            excerpt = snapshot.text if allowed else ''
+            decisions.append({
+                'evidence': ref.model_dump(mode='json'), 'allowed': allowed,
+                'excerpt': excerpt, 'sha256': snapshot.sha256 if allowed else ''})
+        return {'decisions': decisions}
+
     async def authorize_pages(self, token: str, pages, include_historical: bool, as_of) -> dict:
         """Batch page authorization for graphiti projection workers.
 
