@@ -65,6 +65,21 @@ class Neo4jGraph:
         except Exception:
             raise unavailable() from None
 
+    async def exists(self, projection_id, graph):
+        """Check whether a projection episode already exists in Neo4j.
+
+        Used by the projection worker to skip re-projecting unchanged
+        revisions (catalog calls this as `await exists(projection_id, graph)`).
+        """
+        try:
+            rows = await self._query(
+                "MATCH (e:Episodic {uuid: $projection_id}) RETURN e.uuid LIMIT 1",
+                projection_id=projection_id,
+            )
+            return bool(rows)
+        except Exception:
+            return False
+
     async def write(self, graph, generation):
         projection_id = self.projection_id(graph.revision_id, generation)
         node_ids = {n.id: digest([projection_id, 'node', n.id]) for n in graph.nodes}
@@ -98,7 +113,9 @@ class Neo4jGraph:
                         attributes={**metadata, 'knowledge_edge_id': edge.id, 'knowledge_kind': edge.kind, 'knowledge_fragments': edge.fragment_ids,
                             'knowledge_payload': edge.model_dump_json()})
                     await self.driver.entity_edge_ops.save(self.driver, entity_edge, tx=tx)
-        except Exception:
+        except Exception as error:
+            import logging
+            logging.getLogger(__name__).error('Neo4j write failed: %s: %s', type(error).__name__, str(error)[:300])
             raise unavailable() from None
         return projection_id
 

@@ -133,6 +133,39 @@ class KnowledgeService:
         result.pop('object_key')
         return result
 
+    async def authorize_pages(self, token: str, pages, include_historical: bool, as_of) -> dict:
+        """Batch page authorization for graphiti projection workers.
+
+        Returns {'decisions': [{page_id, revision_id, allowed, space_id}]}
+        for each requested page — allowed is true only when the caller has
+        read access to the page's space and the revision exists.
+        """
+        decisions = []
+        for page_auth in pages:
+            page = await self.session.get(Page, page_auth.page_id)
+            if page is None:
+                decisions.append({
+                    'page_id': page_auth.page_id,
+                    'revision_id': page_auth.revision_id,
+                    'allowed': False,
+                    'authorized': False,
+                    'space_id': '',
+                })
+                continue
+            try:
+                await self.auth.require(token, 'read', page.space_id)
+                allowed = True
+            except HTTPException:
+                allowed = False
+            decisions.append({
+                'page_id': page_auth.page_id,
+                'revision_id': page_auth.revision_id,
+                'allowed': allowed,
+                'authorized': allowed,
+                'space_id': page.space_id,
+            })
+        return {'decisions': decisions}
+
     async def source_revision(self, token: str, source_id: str, source_revision: str, path: str | None = None) -> dict:
         query = select(SourceSnapshot).where(SourceSnapshot.source_id == source_id, SourceSnapshot.source_revision == source_revision).order_by(SourceSnapshot.path)
         if path is not None:
